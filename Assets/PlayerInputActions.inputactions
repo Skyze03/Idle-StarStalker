@@ -1,0 +1,171 @@
+{
+    "version": 1,
+    "name": "PlayerInputActions",
+    "maps": [
+        {
+            "name": "Debug",
+            "id": "4ddf9323-b450-44b0-8ff3-adf267781295",
+            "actions": [
+                {
+                    "name": "AddTestItems",
+                    "type": "Button",
+                    "id": "3c96f27a-408c-4380-aac4-07638f333236",
+                    "expectedControlType": "",
+                    "processors": "",
+                    "interactions": "",
+                    "initialStateCheck": false
+                },
+                {
+                    "name": "ClearInventory",
+                    "type": "Button",
+                    "id": "8e177f1e-a3d0-47d2-b7f5-bb5f777fe13d",
+                    "expectedControlType": "",
+                    "processors": "",
+                    "interactions": "",
+                    "initialStateCheck": false
+                },
+                {
+                    "name": "RefreshUI",
+                    "type": "Button",
+                    "id": "1a081f13-2db4-4360-a0c6-a8599eb088af",
+                    "expectedControlType": "",
+                    "processors": "",
+                    "interactions": "",
+                    "initialStateCheck": false
+                },
+                {
+                    "name": "ToggleInventory",
+                    "type": "Button",
+                    "id": "6708c410-5552-45c4-841b-8785d782fbe0",
+                    "expectedControlType": "",
+                    "processors": "",
+                    "interactions": "",
+                    "initialStateCheck": false
+                },
+                {
+                    "name": "New action4",
+                    "type": "Button",
+                    "id": "9010dd05-5809-4348-8fcb-9edb172500f3",
+                    "expectedControlType": "",
+                    "processors": "",
+                    "interactions": "",
+                    "initialStateCheck": false
+                }
+            ],
+            "bindings": [
+                {
+                    "name": "",
+                    "id": "29736894-2fc9-46a9-9d8a-d09ca8f7d51b",
+                    "path": "<Keyboard>/f8",
+                    "interactions": "",
+                    "processors": "",
+                    "groups": "",
+                    "action": "AddTestItems",
+                    "isComposite": false,
+                    "isPartOfComposite": false
+                },
+                {
+                    "name": "",
+                    "id": "9d1daefb-c2e5-4921-89db-fafc6762a787",
+                    "path": "<Keyboard>/f9",
+                    "interactions": "",
+                    "processors": "",
+                    "groups": "",
+                    "action": "ClearInventory",
+                    "isComposite": false,
+                    "isPartOfComposite": false
+                },
+                {
+                    "name": "",
+                    "id": "624d0892-d006-430e-bea5-ef74af4d9480",
+                    "path": "<Keyboard>/f10",
+                    "interactions": "",
+                    "processors": "",
+                    "groups": "",
+                    "action": "RefreshUI",
+                    "isComposite": false,
+                    "isPartOfComposite": false
+                },
+                {
+                    "name": "",
+                    "id": "54d6da5f-76b2-451c-a15d-dc8d7ee86143",
+                    "path": "",
+                    "interactions": "",
+                    "processors": "",
+                    "groups": "",
+                    "action": "New action4",
+                    "isComposite": false,
+                    "isPartOfComposite": false
+                },
+                {
+                    "name": "",
+                    "id": "9f8e0a6e-c90a-422c-b591-75220f0410b9",
+                    "path": "<Keyboard>/i",
+                    "interactions": "",
+                    "processors": "",
+                    "groups": "",
+                    "action": "ToggleInventory",
+                    "isComposite": false,
+                    "isPartOfComposite": false
+                }
+            ]
+        },
+        {
+            "name": "Gameplay",
+            "id": "587389ba-4fa0-4a8b-b856-0f6f083e2b58",
+            "actions": [
+                {
+                    "name": "New action",
+                    "type": "Button",
+                    "id": "bd4c7f3e-9524-489b-9add-3237af571359",
+                    "expectedControlType": "",
+                    "processors": "",
+                    "interactions": "",
+                    "initialStateCheck": false
+                }
+            ],
+            "bindings": [
+                {
+                    "name": "",
+                    "id": "17b85dad-f9d9-4d41-847b-c832878a8702",
+                    "path": "",
+                    "interactions": "",
+                    "processors": "",
+                    "groups": "",
+                    "action": "New action",
+                    "isComposite": false,
+                    "isPartOfComposite": false
+                }
+            ]
+        },
+        {
+            "name": "UI",
+            "id": "a78389b5-26cb-40bb-8916-720b611b12cb",
+            "actions": [
+                {
+                    "name": "New action",
+                    "type": "Button",
+                    "id": "f77f7e61-bf4d-4d48-a051-d922c5a3809b",
+                    "expectedControlType": "",
+                    "processors": "",
+                    "interactions": "",
+                    "initialStateCheck": false
+                }
+            ],
+            "bindings": [
+                {
+                    "name": "",
+                    "id": "ce9b7b86-b771-4a81-8b95-d9a6e65b046b",
+                    "path": "",
+                    "interactions": "",
+                    "processors": "",
+                    "groups": "",
+                    "action": "New action",
+                    "isComposite": false,
+                    "isPartOfComposite": false
+                }
+            ]
+        }
+    ],
+    "controlSchemes": []
+}

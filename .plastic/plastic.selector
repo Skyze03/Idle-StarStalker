@@ -1,0 +1,4 @@
+repository "Idle StarTalker/Idle StarTalker@33262456499463@cloud"
+  path "/"
+    br "/main"
+    co "/main"

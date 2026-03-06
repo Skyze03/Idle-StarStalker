@@ -1,0 +1,455 @@
+fileFormatVersion: 2
+guid: 520386e994d690c4ebedd81849379d74
+TextureImporter:
+  internalIDToNameTable:
+  - first:
+      213: 5763829302403693129
+    second: MeditateAvatar_0
+  - first:
+      213: -9058282728164348390
+    second: MeditateAvatar_1
+  - first:
+      213: 8118037653840234827
+    second: MeditateAvatar_2
+  - first:
+      213: -5753789108211619309
+    second: MeditateAvatar_3
+  - first:
+      213: 7718046088780076015
+    second: MeditateAvatar_4
+  - first:
+      213: -2729992902105463402
+    second: MeditateAvatar_5
+  - first:
+      213: 3757043241929489922
+    second: MeditateAvatar_6
+  - first:
+      213: 7426738134641601029
+    second: MeditateAvatar_7
+  - first:
+      213: -1000204671690389197
+    second: MeditateAvatar_8
+  - first:
+      213: 5547729861380970780
+    second: MeditateAvatar_9
+  - first:
+      213: 6814224518381408222
+    second: MeditateAvatar_10
+  - first:
+      213: 3876826715025570773
+    second: MeditateAvatar_11
+  - first:
+      213: 4484121958877069201
+    second: MeditateAvatar_12
+  externalObjects: {}
+  serializedVersion: 13
+  mipmaps:
+    mipMapMode: 0
+    enableMipMap: 0
+    sRGBTexture: 1
+    linearTexture: 0
+    fadeOut: 0
+    borderMipMap: 0
+    mipMapsPreserveCoverage: 0
+    alphaTestReferenceValue: 0.5
+    mipMapFadeDistanceStart: 1
+    mipMapFadeDistanceEnd: 3
+  bumpmap:
+    convertToNormalMap: 0
+    externalNormalMap: 0
+    heightScale: 0.25
+    normalMapFilter: 0
+    flipGreenChannel: 0
+  isReadable: 0
+  streamingMipmaps: 0
+  streamingMipmapsPriority: 0
+  vTOnly: 0
+  ignoreMipmapLimit: 0
+  grayScaleToAlpha: 0
+  generateCubemap: 6
+  cubemapConvolution: 0
+  seamlessCubemap: 0
+  textureFormat: 1
+  maxTextureSize: 2048
+  textureSettings:
+    serializedVersion: 2
+    filterMode: 1
+    aniso: 1
+    mipBias: 0
+    wrapU: 1
+    wrapV: 1
+    wrapW: 1
+  nPOTScale: 0
+  lightmap: 0
+  compressionQuality: 50
+  spriteMode: 2
+  spriteExtrude: 1
+  spriteMeshType: 1
+  alignment: 0
+  spritePivot: {x: 0.5, y: 0.5}
+  spritePixelsToUnits: 100
+  spriteBorder: {x: 0, y: 0, z: 0, w: 0}
+  spriteGenerateFallbackPhysicsShape: 1
+  alphaUsage: 1
+  alphaIsTransparency: 1
+  spriteTessellationDetail: -1
+  textureType: 8
+  textureShape: 1
+  singleChannelComponent: 0
+  flipbookRows: 1
+  flipbookColumns: 1
+  maxTextureSizeSet: 0
+  compressionQualitySet: 0
+  textureFormatSet: 0
+  ignorePngGamma: 0
+  applyGammaDecoding: 0
+  swizzle: 50462976
+  cookieLightType: 0
+  platformSettings:
+  - serializedVersion: 4
+    buildTarget: DefaultTexturePlatform
+    maxTextureSize: 2048
+    resizeAlgorithm: 0
+    textureFormat: -1
+    textureCompression: 1
+    compressionQuality: 50
+    crunchedCompression: 0
+    allowsAlphaSplitting: 0
+    overridden: 0
+    ignorePlatformSupport: 0
+    androidETC2FallbackOverride: 0
+    forceMaximumCompressionQuality_BC6H_BC7: 0
+  - serializedVersion: 4
+    buildTarget: Standalone
+    maxTextureSize: 2048
+    resizeAlgorithm: 0
+    textureFormat: -1
+    textureCompression: 1
+    compressionQuality: 50
+    crunchedCompression: 0
+    allowsAlphaSplitting: 0
+    overridden: 0
+    ignorePlatformSupport: 0
+    androidETC2FallbackOverride: 0
+    forceMaximumCompressionQuality_BC6H_BC7: 0
+  spriteSheet:
+    serializedVersion: 2
+    sprites:
+    - serializedVersion: 2
+      name: MeditateAvatar_0
+      rect:
+        serializedVersion: 2
+        x: 914
+        y: 871
+        width: 466
+        height: 455
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 94a72c3663c3dff40800000000000000
+      internalID: 5763829302403693129
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: MeditateAvatar_1
+      rect:
+        serializedVersion: 2
+        x: 1336
+        y: 914
+        width: 136
+        height: 269
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: a1e25b00ad38a4280800000000000000
+      internalID: -9058282728164348390
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: MeditateAvatar_2
+      rect:
+        serializedVersion: 2
+        x: 1339
+        y: 1021
+        width: 86
+        height: 300
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: b4984662c3019a070800000000000000
+      internalID: 8118037653840234827
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: MeditateAvatar_3
+      rect:
+        serializedVersion: 2
+        x: 1419
+        y: 867
+        width: 107
+        height: 320
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 31ae88c7a4f6620b0800000000000000
+      internalID: -5753789108211619309
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: MeditateAvatar_4
+      rect:
+        serializedVersion: 2
+        x: 1176
+        y: 859
+        width: 73
+        height: 71
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: fe354d996020c1b60800000000000000
+      internalID: 7718046088780076015
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: MeditateAvatar_5
+      rect:
+        serializedVersion: 2
+        x: 1282
+        y: 890
+        width: 149
+        height: 67
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 6958aae6bed1d1ad0800000000000000
+      internalID: -2729992902105463402
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: MeditateAvatar_6
+      rect:
+        serializedVersion: 2
+        x: 1307
+        y: 928
+        width: 91
+        height: 74
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 20e3df04ce2b32430800000000000000
+      internalID: 3757043241929489922
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: MeditateAvatar_7
+      rect:
+        serializedVersion: 2
+        x: 928
+        y: 452
+        width: 639
+        height: 437
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 50ae8232cf2111760800000000000000
+      internalID: 7426738134641601029
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: MeditateAvatar_8
+      rect:
+        serializedVersion: 2
+        x: 1089
+        y: 735
+        width: 139
+        height: 155
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 3394531862f8e12f0800000000000000
+      internalID: -1000204671690389197
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: MeditateAvatar_9
+      rect:
+        serializedVersion: 2
+        x: 1110
+        y: 752
+        width: 223
+        height: 159
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: c1990717aee7dfc40800000000000000
+      internalID: 5547729861380970780
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: MeditateAvatar_10
+      rect:
+        serializedVersion: 2
+        x: 1121
+        y: 767
+        width: 183
+        height: 160
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: edf81ed981df09e50800000000000000
+      internalID: 6814224518381408222
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: MeditateAvatar_11
+      rect:
+        serializedVersion: 2
+        x: 854
+        y: 448
+        width: 317
+        height: 214
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 5dbf7d46b514dc530800000000000000
+      internalID: 3876826715025570773
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: MeditateAvatar_12
+      rect:
+        serializedVersion: 2
+        x: 1030
+        y: 437
+        width: 407
+        height: 170
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 19f7568e92dca3e30800000000000000
+      internalID: 4484121958877069201
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    outline: []
+    customData: 
+    physicsShape: []
+    bones: []
+    spriteID: 
+    internalID: 0
+    vertices: []
+    indices: 
+    edges: []
+    weights: []
+    secondaryTextures: []
+    spriteCustomMetadata:
+      entries: []
+    nameFileIdTable:
+      MeditateAvatar_0: 5763829302403693129
+      MeditateAvatar_1: -9058282728164348390
+      MeditateAvatar_10: 6814224518381408222
+      MeditateAvatar_11: 3876826715025570773
+      MeditateAvatar_12: 4484121958877069201
+      MeditateAvatar_2: 8118037653840234827
+      MeditateAvatar_3: -5753789108211619309
+      MeditateAvatar_4: 7718046088780076015
+      MeditateAvatar_5: -2729992902105463402
+      MeditateAvatar_6: 3757043241929489922
+      MeditateAvatar_7: 7426738134641601029
+      MeditateAvatar_8: -1000204671690389197
+      MeditateAvatar_9: 5547729861380970780
+  mipmapLimitGroupName: 
+  pSDRemoveMatte: 0
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
