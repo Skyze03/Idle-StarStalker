@@ -5,16 +5,18 @@ public class MeditationSystem : MonoBehaviour
     private PlayerData playerData;
     private MeditationState meditationState;
     private InventorySystem inventorySystem;
+    private BuffData buffData;
 
     [SerializeField] private int expPerMeditation = 10;
     [SerializeField] private int autoMeditationUnlockLevel = 5;
     [SerializeField] private float memoryFragmentDropChance = 0.3f;
 
-    public void Setup(PlayerData data, MeditationState state, InventorySystem inventory)
+    public void Setup(PlayerData data, MeditationState state, InventorySystem inventory, BuffData buff)
     {
         playerData = data;
         meditationState = state;
         inventorySystem = inventory;
+        buffData = buff;
     }
 
     public void StartMeditation()
@@ -25,7 +27,14 @@ public class MeditationSystem : MonoBehaviour
             return;
         }
 
-        playerData.exp += expPerMeditation;
+        int totalExpGain = expPerMeditation;
+
+        if (buffData != null)
+        {
+            totalExpGain += buffData.meditationExpBonus;
+        }
+
+        playerData.exp += totalExpGain;
         CheckLevelUp();
         TryDropMemoryFragment();
 
@@ -90,20 +99,9 @@ public class MeditationSystem : MonoBehaviour
 
     public void Tick(float deltaTime)
     {
-        if (meditationState == null)
-        {
-            return;
-        }
-
-        if (!meditationState.autoMeditationUnlocked)
-        {
-            return;
-        }
-
-        if (!meditationState.autoMeditationEnabled)
-        {
-            return;
-        }
+        if (meditationState == null) return;
+        if (!meditationState.autoMeditationUnlocked) return;
+        if (!meditationState.autoMeditationEnabled) return;
 
         meditationState.autoMeditationTimer += deltaTime;
 

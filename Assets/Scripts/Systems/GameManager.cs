@@ -4,6 +4,7 @@ public class GameManager : MonoBehaviour
 {
     public static GameManager Instance;
 
+    [Header("Core Data")]
     public PlayerData playerData;
 
     [Header("Scene References")]
@@ -15,10 +16,20 @@ public class GameManager : MonoBehaviour
     [SerializeField] private UpgradeUI upgradeUI;
     [SerializeField] private InventorySystem inventorySystem;
     [SerializeField] private InventoryUI inventoryUI;
+    [SerializeField] private CombinerSystem combinerSystem;
+    [SerializeField] private CombinerUI combinerUI;
     [SerializeField] private PanelSwitcher panelSwitcher;
+    [SerializeField] private SaveSystem saveSystem;
+    [SerializeField] private SaveLoadUI saveLoadUI;
 
     private MeditationState meditationState;
     private InventoryData inventoryData;
+    private BuffData buffData;
+
+    public PlayerData PlayerDataRef => playerData;
+    public MeditationState MeditationStateRef => meditationState;
+    public InventoryData InventoryDataRef => inventoryData;
+    public BuffData BuffDataRef => buffData;
 
     private void Awake()
     {
@@ -40,20 +51,26 @@ public class GameManager : MonoBehaviour
 
         meditationState = new MeditationState();
         inventoryData = new InventoryData();
+        buffData = new BuffData();
 
         if (inventorySystem != null)
         {
             inventorySystem.Setup(inventoryData);
         }
 
+        if (combinerSystem != null)
+        {
+            combinerSystem.Setup(inventoryData, buffData);
+        }
+
         if (meditationSystem != null)
         {
-            meditationSystem.Setup(playerData, meditationState, inventorySystem);
+            meditationSystem.Setup(playerData, meditationState, inventorySystem, buffData);
         }
 
         if (collectionSystem != null)
         {
-            collectionSystem.Setup(playerData, inventorySystem);
+            collectionSystem.Setup(playerData, inventorySystem, buffData);
         }
 
         if (upgradeSystem != null)
@@ -86,6 +103,16 @@ public class GameManager : MonoBehaviour
             inventoryUI.Setup(inventoryData, panelSwitcher);
         }
 
+        if (combinerUI != null)
+        {
+            combinerUI.Setup(combinerSystem, buffData, panelSwitcher);
+        }
+
+        if (saveLoadUI != null && saveSystem != null)
+        {
+            saveLoadUI.Setup(saveSystem, this);
+        }
+
         Debug.Log("Game initialized.");
     }
 
@@ -96,24 +123,15 @@ public class GameManager : MonoBehaviour
             meditationSystem.Tick(Time.deltaTime);
         }
 
-        if (meditationUI != null)
-        {
-            meditationUI.Refresh();
-        }
+        RefreshAllUI();
+    }
 
-        if (collectionUI != null)
-        {
-            collectionUI.Refresh();
-        }
-
-        if (upgradeUI != null)
-        {
-            upgradeUI.Refresh();
-        }
-
-        if (inventoryUI != null)
-        {
-            inventoryUI.Refresh();
-        }
+    public void RefreshAllUI()
+    {
+        if (meditationUI != null) meditationUI.Refresh();
+        if (collectionUI != null) collectionUI.Refresh();
+        if (upgradeUI != null) upgradeUI.Refresh();
+        if (inventoryUI != null) inventoryUI.Refresh();
+        if (combinerUI != null) combinerUI.Refresh();
     }
 }
