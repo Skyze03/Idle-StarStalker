@@ -14,9 +14,34 @@ public class PlayerData
     public int feetLevel = 1;
     public int weaponLevel = 1;
 
+    public PlayerStats stats = new PlayerStats();
+
     public void CalculateStats()
     {
-        // 现在先留空，后面战斗系统加入时再正式计算属性
+        if (stats == null)
+        {
+            stats = new PlayerStats();
+        }
+
+        // 已接入现有系统的属性
+        stats.meditationExpBonus = headLevel - 1;
+        stats.collectionEnergyBonus = armsLevel - 1;
+
+        // 先算出来，后面战斗系统再接
+        stats.hp = 100 + (legsLevel - 1) * 20;
+        stats.attack = 10 + (weaponLevel - 1) * 5;
+        stats.defense = 5 + (chestLevel - 1) * 3;
+        stats.speed = 5 + (feetLevel - 1) * 2;
+
+        Debug.Log(
+            "Stats Recalculated -> " +
+            "MeditationBonus: " + stats.meditationExpBonus +
+            ", CollectionBonus: " + stats.collectionEnergyBonus +
+            ", HP: " + stats.hp +
+            ", Attack: " + stats.attack +
+            ", Defense: " + stats.defense +
+            ", Speed: " + stats.speed
+        );
     }
 
     public int GetRequiredExp()

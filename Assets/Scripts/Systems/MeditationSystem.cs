@@ -29,11 +29,15 @@ public class MeditationSystem : MonoBehaviour
 
         int totalExpGain = expPerMeditation;
 
+        if (playerData != null && playerData.stats != null)
+        {
+            totalExpGain += playerData.stats.meditationExpBonus;
+        }
+
         if (buffData != null)
         {
             totalExpGain += buffData.meditationExpBonus;
         }
-
         playerData.exp += totalExpGain;
         CheckLevelUp();
         TryDropMemoryFragment();

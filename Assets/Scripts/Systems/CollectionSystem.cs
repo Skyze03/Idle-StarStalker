@@ -26,6 +26,11 @@ public class CollectionSystem : MonoBehaviour
 
         int totalEnergyGain = energyPerCollection;
 
+        if (playerData != null && playerData.stats != null)
+        {
+            totalEnergyGain += playerData.stats.collectionEnergyBonus;
+        }
+
         if (buffData != null)
         {
             totalEnergyGain += buffData.collectionEnergyBonus;
