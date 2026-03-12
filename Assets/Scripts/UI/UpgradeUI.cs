@@ -1,13 +1,17 @@
 using UnityEngine;
 using UnityEngine.UI;
-using TMPro;
 
 public class UpgradeUI : MonoBehaviour
 {
-    [Header("UI References")]
-    [SerializeField] private TextMeshProUGUI bodyLevelText;
-    [SerializeField] private TextMeshProUGUI upgradeCostText;
-    [SerializeField] private Button upgradeButton;
+    [Header("Row References")]
+    [SerializeField] private UpgradeRowUI headRow;
+    [SerializeField] private UpgradeRowUI armsRow;
+    [SerializeField] private UpgradeRowUI legsRow;
+    [SerializeField] private UpgradeRowUI chestRow;
+    [SerializeField] private UpgradeRowUI feetRow;
+    [SerializeField] private UpgradeRowUI weaponRow;
+
+    [Header("Navigation")]
     [SerializeField] private Button goToMeditationFromUpgradeButton;
 
     private UpgradeSystem upgradeSystem;
@@ -20,10 +24,34 @@ public class UpgradeUI : MonoBehaviour
         playerData = data;
         panelSwitcher = switcher;
 
-        if (upgradeButton != null)
+        if (headRow != null)
         {
-            upgradeButton.onClick.RemoveAllListeners();
-            upgradeButton.onClick.AddListener(OnUpgradeButtonClicked);
+            headRow.Setup(upgradeSystem, playerData);
+        }
+
+        if (armsRow != null)
+        {
+            armsRow.Setup(upgradeSystem, playerData);
+        }
+
+        if (legsRow != null)
+        {
+            legsRow.Setup(upgradeSystem, playerData);
+        }
+
+        if (chestRow != null)
+        {
+            chestRow.Setup(upgradeSystem, playerData);
+        }
+
+        if (feetRow != null)
+        {
+            feetRow.Setup(upgradeSystem, playerData);
+        }
+
+        if (weaponRow != null)
+        {
+            weaponRow.Setup(upgradeSystem, playerData);
         }
 
         if (goToMeditationFromUpgradeButton != null)
@@ -37,32 +65,12 @@ public class UpgradeUI : MonoBehaviour
 
     public void Refresh()
     {
-        if (playerData == null)
-        {
-            return;
-        }
-
-        if (bodyLevelText != null)
-        {
-            bodyLevelText.text = "Body Level: " + playerData.bodyLevel;
-        }
-
-        if (upgradeCostText != null)
-        {
-            upgradeCostText.text = "Upgrade Cost: " + playerData.GetBodyUpgradeCost() + " Energy";
-        }
-    }
-
-    private void OnUpgradeButtonClicked()
-    {
-        if (upgradeSystem == null)
-        {
-            Debug.LogWarning("UpgradeUI: upgradeSystem is null.");
-            return;
-        }
-
-        upgradeSystem.TryUpgradeBody();
-        Refresh();
+        if (headRow != null) headRow.Refresh();
+        if (armsRow != null) armsRow.Refresh();
+        if (legsRow != null) legsRow.Refresh();
+        if (chestRow != null) chestRow.Refresh();
+        if (feetRow != null) feetRow.Refresh();
+        if (weaponRow != null) weaponRow.Refresh();
     }
 
     private void OnGoToMeditationClicked()

@@ -6,7 +6,13 @@ public class SaveData
     public int level;
     public int exp;
     public int energy;
-    public int bodyLevel;
+
+    public int headLevel;
+    public int armsLevel;
+    public int legsLevel;
+    public int chestLevel;
+    public int feetLevel;
+    public int weaponLevel;
 
     public bool autoMeditationUnlocked;
     public bool autoMeditationEnabled;

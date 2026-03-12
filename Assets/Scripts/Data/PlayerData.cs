@@ -7,11 +7,16 @@ public class PlayerData
     public int exp = 0;
     public int energy = 0;
 
-    public int bodyLevel = 1;
+    public int headLevel = 1;
+    public int armsLevel = 1;
+    public int legsLevel = 1;
+    public int chestLevel = 1;
+    public int feetLevel = 1;
+    public int weaponLevel = 1;
 
     public void CalculateStats()
     {
-        // 现在先留空，后面再扩展真正属性计算
+        // 现在先留空，后面战斗系统加入时再正式计算属性
     }
 
     public int GetRequiredExp()
@@ -19,8 +24,68 @@ public class PlayerData
         return level * 100;
     }
 
-    public int GetBodyUpgradeCost()
+    public int GetPartLevel(BodyPartType partType)
     {
-        return bodyLevel * 10;
+        switch (partType)
+        {
+            case BodyPartType.Head:
+                return headLevel;
+
+            case BodyPartType.Arms:
+                return armsLevel;
+
+            case BodyPartType.Legs:
+                return legsLevel;
+
+            case BodyPartType.Chest:
+                return chestLevel;
+
+            case BodyPartType.Feet:
+                return feetLevel;
+
+            case BodyPartType.Weapon:
+                return weaponLevel;
+
+            default:
+                return 1;
+        }
+    }
+
+    public int GetPartUpgradeCost(BodyPartType partType)
+    {
+        int currentLevel = GetPartLevel(partType);
+        return currentLevel * 10;
+    }
+
+    public void UpgradePart(BodyPartType partType)
+    {
+        switch (partType)
+        {
+            case BodyPartType.Head:
+                headLevel++;
+                break;
+
+            case BodyPartType.Arms:
+                armsLevel++;
+                break;
+
+            case BodyPartType.Legs:
+                legsLevel++;
+                break;
+
+            case BodyPartType.Chest:
+                chestLevel++;
+                break;
+
+            case BodyPartType.Feet:
+                feetLevel++;
+                break;
+
+            case BodyPartType.Weapon:
+                weaponLevel++;
+                break;
+        }
+
+        CalculateStats();
     }
 }

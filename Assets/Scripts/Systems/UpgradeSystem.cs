@@ -9,7 +9,7 @@ public class UpgradeSystem : MonoBehaviour
         playerData = data;
     }
 
-    public bool TryUpgradeBody()
+    public bool TryUpgradePart(BodyPartType partType)
     {
         if (playerData == null)
         {
@@ -17,18 +17,18 @@ public class UpgradeSystem : MonoBehaviour
             return false;
         }
 
-        int cost = playerData.GetBodyUpgradeCost();
+        int cost = playerData.GetPartUpgradeCost(partType);
 
         if (playerData.energy < cost)
         {
-            Debug.Log("Not enough energy to upgrade body.");
+            Debug.Log("Not enough energy to upgrade " + partType);
             return false;
         }
 
         playerData.energy -= cost;
-        playerData.bodyLevel++;
+        playerData.UpgradePart(partType);
 
-        Debug.Log("Body upgraded. New Body Level = " + playerData.bodyLevel);
+        Debug.Log(partType + " upgraded. New Level = " + playerData.GetPartLevel(partType));
         return true;
     }
 }

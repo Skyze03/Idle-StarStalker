@@ -23,7 +23,13 @@ public class SaveSystem : MonoBehaviour
         saveData.level = playerData.level;
         saveData.exp = playerData.exp;
         saveData.energy = playerData.energy;
-        saveData.bodyLevel = playerData.bodyLevel;
+
+        saveData.headLevel = playerData.headLevel;
+        saveData.armsLevel = playerData.armsLevel;
+        saveData.legsLevel = playerData.legsLevel;
+        saveData.chestLevel = playerData.chestLevel;
+        saveData.feetLevel = playerData.feetLevel;
+        saveData.weaponLevel = playerData.weaponLevel;
 
         saveData.autoMeditationUnlocked = meditationState.autoMeditationUnlocked;
         saveData.autoMeditationEnabled = meditationState.autoMeditationEnabled;
@@ -61,7 +67,15 @@ public class SaveSystem : MonoBehaviour
         playerData.level = saveData.level;
         playerData.exp = saveData.exp;
         playerData.energy = saveData.energy;
-        playerData.bodyLevel = saveData.bodyLevel;
+
+        playerData.headLevel = saveData.headLevel;
+        playerData.armsLevel = saveData.armsLevel;
+        playerData.legsLevel = saveData.legsLevel;
+        playerData.chestLevel = saveData.chestLevel;
+        playerData.feetLevel = saveData.feetLevel;
+        playerData.weaponLevel = saveData.weaponLevel;
+
+        playerData.CalculateStats();
 
         meditationState.autoMeditationUnlocked = saveData.autoMeditationUnlocked;
         meditationState.autoMeditationEnabled = saveData.autoMeditationEnabled;
