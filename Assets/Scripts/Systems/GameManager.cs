@@ -18,6 +18,7 @@ public class GameManager : MonoBehaviour
     [SerializeField] private InventoryUI inventoryUI;
     [SerializeField] private CombinerSystem combinerSystem;
     [SerializeField] private CombinerUI combinerUI;
+    [SerializeField] private StatsUI statsUI;
     [SerializeField] private PanelSwitcher panelSwitcher;
     [SerializeField] private SaveSystem saveSystem;
     [SerializeField] private SaveLoadUI saveLoadUI;
@@ -108,6 +109,11 @@ public class GameManager : MonoBehaviour
             combinerUI.Setup(combinerSystem, buffData, panelSwitcher);
         }
 
+        if (statsUI != null)
+        {
+            statsUI.Setup(playerData, panelSwitcher);
+        }
+
         if (saveLoadUI != null && saveSystem != null)
         {
             saveLoadUI.Setup(saveSystem, this);
@@ -133,5 +139,6 @@ public class GameManager : MonoBehaviour
         if (upgradeUI != null) upgradeUI.Refresh();
         if (inventoryUI != null) inventoryUI.Refresh();
         if (combinerUI != null) combinerUI.Refresh();
+        if (statsUI != null) statsUI.Refresh();
     }
 }

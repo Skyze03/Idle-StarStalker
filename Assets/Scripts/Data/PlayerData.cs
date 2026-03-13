@@ -33,15 +33,6 @@ public class PlayerData
         stats.defense = 5 + (chestLevel - 1) * 3;
         stats.speed = 5 + (feetLevel - 1) * 2;
 
-        Debug.Log(
-            "Stats Recalculated -> " +
-            "MeditationBonus: " + stats.meditationExpBonus +
-            ", CollectionBonus: " + stats.collectionEnergyBonus +
-            ", HP: " + stats.hp +
-            ", Attack: " + stats.attack +
-            ", Defense: " + stats.defense +
-            ", Speed: " + stats.speed
-        );
     }
 
     public int GetRequiredExp()
