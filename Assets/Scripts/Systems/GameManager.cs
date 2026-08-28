@@ -22,15 +22,21 @@ public class GameManager : MonoBehaviour
     [SerializeField] private PanelSwitcher panelSwitcher;
     [SerializeField] private SaveSystem saveSystem;
     [SerializeField] private SaveLoadUI saveLoadUI;
-
+    [SerializeField] private BattleSystem battleSystem;
+    [SerializeField] private BattleUI battleUI;
     private MeditationState meditationState;
     private InventoryData inventoryData;
     private BuffData buffData;
 
+    private BattleState battleState;
+    private EnemyData enemyData;
     public PlayerData PlayerDataRef => playerData;
     public MeditationState MeditationStateRef => meditationState;
     public InventoryData InventoryDataRef => inventoryData;
     public BuffData BuffDataRef => buffData;
+
+    public BattleState BattleStateRef => battleState;
+    public EnemyData EnemyDataRef => enemyData;
 
     private void Awake()
     {
@@ -53,6 +59,17 @@ public class GameManager : MonoBehaviour
         meditationState = new MeditationState();
         inventoryData = new InventoryData();
         buffData = new BuffData();
+
+        battleState = new BattleState();
+
+        enemyData = new EnemyData(
+            "Training Shade",
+            60,
+            8,
+            2,
+            4,
+            20
+        );
 
         if (inventorySystem != null)
         {
@@ -77,6 +94,15 @@ public class GameManager : MonoBehaviour
         if (upgradeSystem != null)
         {
             upgradeSystem.Setup(playerData);
+        }
+
+        if (battleSystem != null)
+        {
+            battleSystem.Setup(
+                playerData,
+                battleState,
+                enemyData
+            );
         }
 
         if (panelSwitcher != null)
@@ -114,6 +140,17 @@ public class GameManager : MonoBehaviour
             statsUI.Setup(playerData, panelSwitcher);
         }
 
+        if (battleUI != null)
+        {
+            battleUI.Setup(
+                battleSystem,
+                playerData,
+                battleState,
+                enemyData,
+                panelSwitcher
+            );
+        }
+
         if (saveLoadUI != null && saveSystem != null)
         {
             saveLoadUI.Setup(saveSystem, this);
@@ -129,6 +166,11 @@ public class GameManager : MonoBehaviour
             meditationSystem.Tick(Time.deltaTime);
         }
 
+        if (battleSystem != null)
+        {
+            battleSystem.Tick(Time.deltaTime);
+        }
+
         RefreshAllUI();
     }
 
@@ -140,5 +182,6 @@ public class GameManager : MonoBehaviour
         if (inventoryUI != null) inventoryUI.Refresh();
         if (combinerUI != null) combinerUI.Refresh();
         if (statsUI != null) statsUI.Refresh();
+        if (battleUI != null) battleUI.Refresh();
     }
 }

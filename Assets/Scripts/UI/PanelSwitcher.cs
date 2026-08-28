@@ -10,6 +10,7 @@ public class PanelSwitcher : MonoBehaviour
     [SerializeField] private GameObject inventoryPanel;
     [SerializeField] private GameObject combinerPanel;
     [SerializeField] private GameObject statsPanel;
+    [SerializeField] private GameObject battlePanel;
 
     [Header("Navigation Buttons")]
     [SerializeField] private Button goToCollectionButton;
@@ -17,6 +18,7 @@ public class PanelSwitcher : MonoBehaviour
     [SerializeField] private Button goToInventoryButton;
     [SerializeField] private Button goToCombinerButton;
     [SerializeField] private Button goToStatsButton;
+    [SerializeField] private Button goToBattleButton;
 
     public void Setup()
     {
@@ -50,6 +52,12 @@ public class PanelSwitcher : MonoBehaviour
             goToStatsButton.onClick.AddListener(OnGoToStatsClicked);
         }
 
+        if (goToBattleButton != null)
+        {
+            goToBattleButton.onClick.RemoveAllListeners();
+            goToBattleButton.onClick.AddListener(OnGoToBattleClicked);
+        }
+
         ShowMeditationPanel();
     }
 
@@ -61,6 +69,7 @@ public class PanelSwitcher : MonoBehaviour
         if (inventoryPanel != null) inventoryPanel.SetActive(false);
         if (combinerPanel != null) combinerPanel.SetActive(false);
         if (statsPanel != null) statsPanel.SetActive(false);
+        if (battlePanel != null) battlePanel.SetActive(false);
     }
 
     public void ShowCollectionPanel()
@@ -71,6 +80,7 @@ public class PanelSwitcher : MonoBehaviour
         if (inventoryPanel != null) inventoryPanel.SetActive(false);
         if (combinerPanel != null) combinerPanel.SetActive(false);
         if (statsPanel != null) statsPanel.SetActive(false);
+        if (battlePanel != null) battlePanel.SetActive(false);
     }
 
     public void ShowUpgradePanel()
@@ -81,6 +91,7 @@ public class PanelSwitcher : MonoBehaviour
         if (inventoryPanel != null) inventoryPanel.SetActive(false);
         if (combinerPanel != null) combinerPanel.SetActive(false);
         if (statsPanel != null) statsPanel.SetActive(false);
+        if (battlePanel != null) battlePanel.SetActive(false);
     }
 
     public void ShowInventoryPanel()
@@ -91,6 +102,7 @@ public class PanelSwitcher : MonoBehaviour
         if (inventoryPanel != null) inventoryPanel.SetActive(true);
         if (combinerPanel != null) combinerPanel.SetActive(false);
         if (statsPanel != null) statsPanel.SetActive(false);
+        if (battlePanel != null) battlePanel.SetActive(false);
     }
 
     public void ShowCombinerPanel()
@@ -101,6 +113,7 @@ public class PanelSwitcher : MonoBehaviour
         if (inventoryPanel != null) inventoryPanel.SetActive(false);
         if (combinerPanel != null) combinerPanel.SetActive(true);
         if (statsPanel != null) statsPanel.SetActive(false);
+        if (battlePanel != null) battlePanel.SetActive(false);
     }
 
     public void ShowStatsPanel()
@@ -111,6 +124,18 @@ public class PanelSwitcher : MonoBehaviour
         if (inventoryPanel != null) inventoryPanel.SetActive(false);
         if (combinerPanel != null) combinerPanel.SetActive(false);
         if (statsPanel != null) statsPanel.SetActive(true);
+        if (battlePanel != null) battlePanel.SetActive(false);
+    }
+
+    public void ShowBattlePanel()
+    {
+        if (meditationPanel != null) meditationPanel.SetActive(false);
+        if (collectionPanel != null) collectionPanel.SetActive(false);
+        if (upgradePanel != null) upgradePanel.SetActive(false);
+        if (inventoryPanel != null) inventoryPanel.SetActive(false);
+        if (combinerPanel != null) combinerPanel.SetActive(false);
+        if (statsPanel != null) statsPanel.SetActive(false);
+        if (battlePanel != null) battlePanel.SetActive(true);
     }
 
     private void OnGoToCollectionClicked()
@@ -136,5 +161,10 @@ public class PanelSwitcher : MonoBehaviour
     private void OnGoToStatsClicked()
     {
         ShowStatsPanel();
+    }
+
+    private void OnGoToBattleClicked()
+    {
+        ShowBattlePanel();
     }
 }
