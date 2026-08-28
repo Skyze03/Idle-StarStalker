@@ -3,6 +3,8 @@ using UnityEngine.UI;
 
 public class PanelSwitcher : MonoBehaviour
 {
+    private BattleState battleState;
+
     [Header("Panel References")]
     [SerializeField] private GameObject meditationPanel;
     [SerializeField] private GameObject collectionPanel;
@@ -20,8 +22,10 @@ public class PanelSwitcher : MonoBehaviour
     [SerializeField] private Button goToStatsButton;
     [SerializeField] private Button goToBattleButton;
 
-    public void Setup()
+    public void Setup(BattleState battleState)
     {
+        this.battleState = battleState;
+
         if (goToCollectionButton != null)
         {
             goToCollectionButton.onClick.RemoveAllListeners();
@@ -59,10 +63,45 @@ public class PanelSwitcher : MonoBehaviour
         }
 
         ShowMeditationPanel();
+        Refresh();
+    }
+
+    public void Refresh()
+    {
+        bool navigationLocked = IsBattleRunning();
+
+        if (goToCollectionButton != null)
+            goToCollectionButton.interactable = !navigationLocked;
+        if (goToUpgradeButton != null)
+            goToUpgradeButton.interactable = !navigationLocked;
+        if (goToInventoryButton != null)
+            goToInventoryButton.interactable = !navigationLocked;
+        if (goToCombinerButton != null)
+            goToCombinerButton.interactable = !navigationLocked;
+        if (goToStatsButton != null)
+            goToStatsButton.interactable = !navigationLocked;
+    }
+
+    private bool IsBattleRunning()
+    {
+        return battleState != null && battleState.battleRunning;
+    }
+
+    private bool CanLeaveBattle()
+    {
+        if (!IsBattleRunning())
+        {
+            return true;
+        }
+
+        Debug.Log("Cannot leave the battle until it has ended.");
+        return false;
     }
 
     public void ShowMeditationPanel()
     {
+        if (!CanLeaveBattle()) return;
+
         if (meditationPanel != null) meditationPanel.SetActive(true);
         if (collectionPanel != null) collectionPanel.SetActive(false);
         if (upgradePanel != null) upgradePanel.SetActive(false);
@@ -74,6 +113,8 @@ public class PanelSwitcher : MonoBehaviour
 
     public void ShowCollectionPanel()
     {
+        if (!CanLeaveBattle()) return;
+
         if (meditationPanel != null) meditationPanel.SetActive(false);
         if (collectionPanel != null) collectionPanel.SetActive(true);
         if (upgradePanel != null) upgradePanel.SetActive(false);
@@ -85,6 +126,8 @@ public class PanelSwitcher : MonoBehaviour
 
     public void ShowUpgradePanel()
     {
+        if (!CanLeaveBattle()) return;
+
         if (meditationPanel != null) meditationPanel.SetActive(false);
         if (collectionPanel != null) collectionPanel.SetActive(false);
         if (upgradePanel != null) upgradePanel.SetActive(true);
@@ -96,6 +139,8 @@ public class PanelSwitcher : MonoBehaviour
 
     public void ShowInventoryPanel()
     {
+        if (!CanLeaveBattle()) return;
+
         if (meditationPanel != null) meditationPanel.SetActive(false);
         if (collectionPanel != null) collectionPanel.SetActive(false);
         if (upgradePanel != null) upgradePanel.SetActive(false);
@@ -107,6 +152,8 @@ public class PanelSwitcher : MonoBehaviour
 
     public void ShowCombinerPanel()
     {
+        if (!CanLeaveBattle()) return;
+
         if (meditationPanel != null) meditationPanel.SetActive(false);
         if (collectionPanel != null) collectionPanel.SetActive(false);
         if (upgradePanel != null) upgradePanel.SetActive(false);
@@ -118,6 +165,8 @@ public class PanelSwitcher : MonoBehaviour
 
     public void ShowStatsPanel()
     {
+        if (!CanLeaveBattle()) return;
+
         if (meditationPanel != null) meditationPanel.SetActive(false);
         if (collectionPanel != null) collectionPanel.SetActive(false);
         if (upgradePanel != null) upgradePanel.SetActive(false);

@@ -24,12 +24,14 @@ public class GameManager : MonoBehaviour
     [SerializeField] private SaveLoadUI saveLoadUI;
     [SerializeField] private BattleSystem battleSystem;
     [SerializeField] private BattleUI battleUI;
+    [SerializeField] private MainStageSystem mainStageSystem;
     private MeditationState meditationState;
     private InventoryData inventoryData;
     private BuffData buffData;
 
     private BattleState battleState;
     private EnemyData enemyData;
+    private MainStageState mainStageState;
     public PlayerData PlayerDataRef => playerData;
     public MeditationState MeditationStateRef => meditationState;
     public InventoryData InventoryDataRef => inventoryData;
@@ -37,6 +39,8 @@ public class GameManager : MonoBehaviour
 
     public BattleState BattleStateRef => battleState;
     public EnemyData EnemyDataRef => enemyData;
+    public MainStageState MainStageStateRef => mainStageState;
+    public MainStageSystem MainStageSystemRef => mainStageSystem;
 
     private void Awake()
     {
@@ -61,6 +65,7 @@ public class GameManager : MonoBehaviour
         buffData = new BuffData();
 
         battleState = new BattleState();
+        mainStageState = new MainStageState();
 
         enemyData = new EnemyData(
             "Training Shade",
@@ -68,7 +73,8 @@ public class GameManager : MonoBehaviour
             8,
             2,
             4,
-            20
+            5,
+            UltimateData.CreateStarBurst()
         );
 
         if (inventorySystem != null)
@@ -105,9 +111,25 @@ public class GameManager : MonoBehaviour
             );
         }
 
+        if (mainStageSystem == null)
+        {
+            mainStageSystem = gameObject.AddComponent<MainStageSystem>();
+        }
+
+        if (battleSystem != null && mainStageSystem != null)
+        {
+            mainStageSystem.Setup(
+                playerData,
+                inventorySystem,
+                battleSystem,
+                battleState,
+                enemyData,
+                mainStageState
+            );
+        }
         if (panelSwitcher != null)
         {
-            panelSwitcher.Setup();
+            panelSwitcher.Setup(battleState);
         }
 
         if (meditationUI != null)
@@ -147,7 +169,8 @@ public class GameManager : MonoBehaviour
                 playerData,
                 battleState,
                 enemyData,
-                panelSwitcher
+                panelSwitcher,
+                mainStageSystem
             );
         }
 
@@ -161,14 +184,19 @@ public class GameManager : MonoBehaviour
 
     private void Update()
     {
-        if (meditationSystem != null)
+        if (meditationSystem != null &&
+            (battleState == null || !battleState.battleRunning))
         {
             meditationSystem.Tick(Time.deltaTime);
         }
-
         if (battleSystem != null)
         {
             battleSystem.Tick(Time.deltaTime);
+        }
+
+        if (mainStageSystem != null)
+        {
+            mainStageSystem.Tick();
         }
 
         RefreshAllUI();
@@ -182,6 +210,15 @@ public class GameManager : MonoBehaviour
         if (inventoryUI != null) inventoryUI.Refresh();
         if (combinerUI != null) combinerUI.Refresh();
         if (statsUI != null) statsUI.Refresh();
+        if (panelSwitcher != null) panelSwitcher.Refresh();
         if (battleUI != null) battleUI.Refresh();
+    }
+
+    public void HandleGameLoaded()
+    {
+        if (mainStageSystem != null)
+        {
+            mainStageSystem.RefreshAfterLoad();
+        }
     }
 }

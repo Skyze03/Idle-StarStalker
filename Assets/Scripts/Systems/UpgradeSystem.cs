@@ -17,6 +17,14 @@ public class UpgradeSystem : MonoBehaviour
             return false;
         }
 
+        if (!playerData.CanUpgradePart(partType))
+        {
+            Debug.Log(
+                partType + " cannot exceed Player Level " + playerData.level
+            );
+            return false;
+        }
+
         int cost = playerData.GetPartUpgradeCost(partType);
 
         if (playerData.energy < cost)

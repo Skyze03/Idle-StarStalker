@@ -43,7 +43,14 @@ public class UpgradeRowUI : MonoBehaviour
 
         if (costText != null)
         {
-            costText.text = "Cost: " + playerData.GetPartUpgradeCost(partType) + " Energy";
+            costText.text = playerData.CanUpgradePart(partType)
+                ? "Cost: " + playerData.GetPartUpgradeCost(partType) + " Energy"
+                : "Requires Player Level " + (playerData.GetPartLevel(partType) + 1);
+        }
+
+        if (upgradeButton != null)
+        {
+            upgradeButton.interactable = playerData.CanUpgradePart(partType);
         }
     }
 

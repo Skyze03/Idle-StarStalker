@@ -23,4 +23,11 @@ public class SaveData
 
     public int meditationExpBonus;
     public int collectionEnergyBonus;
+
+    public bool mainStageInitialized;
+    public int selectedStage;
+    public int highestUnlockedStage;
+    public int highestClearedStage;
+    public int battleStamina;
+    public long lastStaminaRefreshUtcTicks;
 }

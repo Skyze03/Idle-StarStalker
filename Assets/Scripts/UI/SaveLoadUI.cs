@@ -40,7 +40,8 @@ public class SaveLoadUI : MonoBehaviour
             gameManager.PlayerDataRef,
             gameManager.MeditationStateRef,
             gameManager.InventoryDataRef,
-            gameManager.BuffDataRef
+            gameManager.BuffDataRef,
+            gameManager.MainStageStateRef
         );
     }
 
@@ -56,11 +57,13 @@ public class SaveLoadUI : MonoBehaviour
             gameManager.PlayerDataRef,
             gameManager.MeditationStateRef,
             gameManager.InventoryDataRef,
-            gameManager.BuffDataRef
+            gameManager.BuffDataRef,
+            gameManager.MainStageStateRef
         );
 
         if (loaded)
         {
+            gameManager.HandleGameLoaded();
             gameManager.RefreshAllUI();
         }
     }

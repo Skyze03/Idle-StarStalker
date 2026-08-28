@@ -1,6 +1,7 @@
 using UnityEngine;
 using UnityEngine.UI;
 using TMPro;
+using UnityEngine.Serialization;
 
 public class StatsUI : MonoBehaviour
 {
@@ -10,7 +11,9 @@ public class StatsUI : MonoBehaviour
     [SerializeField] private TextMeshProUGUI hpText;
     [SerializeField] private TextMeshProUGUI attackText;
     [SerializeField] private TextMeshProUGUI defenseText;
-    [SerializeField] private TextMeshProUGUI speedText;
+    [FormerlySerializedAs("speedText")]
+    [SerializeField] private TextMeshProUGUI agilityText;
+    [SerializeField] private TextMeshProUGUI wisdomText;
     [SerializeField] private Button goToMeditationFromStatsButton;
 
     private PlayerData playerData;
@@ -62,9 +65,14 @@ public class StatsUI : MonoBehaviour
             defenseText.text = "Defense: " + playerData.stats.defense;
         }
 
-        if (speedText != null)
+        if (agilityText != null)
         {
-            speedText.text = "Speed: " + playerData.stats.speed;
+            agilityText.text = "Agility: " + playerData.stats.agility;
+        }
+
+        if (wisdomText != null)
+        {
+            wisdomText.text = "Wisdom: " + playerData.stats.wisdom;
         }
     }
 

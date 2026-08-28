@@ -1,13 +1,24 @@
+using System;
 using UnityEngine;
 
 public class BattleSystem : MonoBehaviour
 {
+    public const float ActionThreshold = 100f;
+    public const float RageThreshold = 100f;
+
+    // Keeps the initial Action Bar prototype close to the V1 attack timing.
+    private const float ActionGainPerAgilityPerSecond = ActionThreshold / 15f;
+    private const float RagePerNormalAttack = 10f;
+    private const float RagePerHitTaken = 15f;
+    private const float RageGainPerWisdomPoint = 0.02f;
+
     private PlayerData playerData;
     private BattleState battleState;
     private EnemyData enemyData;
 
     public BattleState BattleState => battleState;
     public EnemyData EnemyData => enemyData;
+    public event Action<BattleResult> BattleEnded;
 
     public void Setup(
         PlayerData playerData,
@@ -21,12 +32,18 @@ public class BattleSystem : MonoBehaviour
         ResetBattle();
     }
 
-    public void StartBattle()
+    public bool StartBattle()
     {
         if (playerData == null || battleState == null || enemyData == null)
         {
             Debug.LogError("BattleSystem is not properly set up.");
-            return;
+            return false;
+        }
+
+        if (battleState.battleRunning)
+        {
+            Debug.LogWarning("A battle is already running.");
+            return false;
         }
 
         // Make sure permanent player stats are up to date.
@@ -35,8 +52,10 @@ public class BattleSystem : MonoBehaviour
         battleState.playerCurrentHP = playerData.stats.hp;
         battleState.enemyCurrentHP = enemyData.maxHP;
 
-        battleState.playerAttackTimer = 0f;
-        battleState.enemyAttackTimer = 0f;
+        battleState.playerActionValue = 0f;
+        battleState.enemyActionValue = 0f;
+        battleState.playerRage = 0f;
+        battleState.enemyRage = 0f;
 
         battleState.battleRunning = true;
         battleState.battleResult = BattleResult.None;
@@ -46,6 +65,7 @@ public class BattleSystem : MonoBehaviour
             $"Battle started: Player HP {battleState.playerCurrentHP} " +
             $"vs {enemyData.enemyName} HP {battleState.enemyCurrentHP}"
         );
+        return true;
     }
 
     public void Tick(float deltaTime)
@@ -55,18 +75,21 @@ public class BattleSystem : MonoBehaviour
             return;
         }
 
-        battleState.playerAttackTimer += deltaTime;
-        battleState.enemyAttackTimer += deltaTime;
-
-        float playerAttackInterval = GetAttackInterval(playerData.stats.speed);
-        float enemyAttackInterval = GetAttackInterval(enemyData.speed);
+        battleState.playerActionValue += GetActionGain(
+            playerData.stats.agility,
+            deltaTime
+        );
+        battleState.enemyActionValue += GetActionGain(
+            enemyData.agility,
+            deltaTime
+        );
 
         // Player attacks first if both become ready on the same frame.
-        if (battleState.playerAttackTimer >= playerAttackInterval)
+        while (battleState.playerActionValue >= ActionThreshold)
         {
-            battleState.playerAttackTimer -= playerAttackInterval;
+            battleState.playerActionValue -= ActionThreshold;
 
-            PlayerAttack();
+            PlayerAct();
 
             if (!battleState.battleRunning)
             {
@@ -74,20 +97,34 @@ public class BattleSystem : MonoBehaviour
             }
         }
 
-        if (battleState.enemyAttackTimer >= enemyAttackInterval)
+        while (battleState.enemyActionValue >= ActionThreshold)
         {
-            battleState.enemyAttackTimer -= enemyAttackInterval;
+            battleState.enemyActionValue -= ActionThreshold;
 
-            EnemyAttack();
+            EnemyAct();
+
+            if (!battleState.battleRunning)
+            {
+                return;
+            }
         }
     }
 
-    private void PlayerAttack()
+    private void PlayerAct()
     {
+        UltimateData ultimate = playerData.equippedUltimate;
+        bool useUltimate = CanUseUltimate(battleState.playerRage, ultimate);
+
         int damage = CalculateDamage(
             playerData.stats.attack,
             enemyData.defense
         );
+
+        if (useUltimate)
+        {
+            damage = CalculateUltimateDamage(damage, ultimate);
+            battleState.playerRage = 0f;
+        }
 
         battleState.enemyCurrentHP -= damage;
 
@@ -96,20 +133,51 @@ public class BattleSystem : MonoBehaviour
             battleState.enemyCurrentHP = 0;
         }
 
-        Debug.Log(
-            $"Player dealt {damage} damage. " +
-            $"{enemyData.enemyName} HP: {battleState.enemyCurrentHP}/{enemyData.maxHP}"
+        if (useUltimate)
+        {
+            Debug.Log(
+                $"Player used {ultimate.ultimateName} for {damage} damage. " +
+                $"{enemyData.enemyName} HP: {battleState.enemyCurrentHP}/{enemyData.maxHP}"
+            );
+        }
+        else
+        {
+            battleState.playerRage = AddRage(
+                battleState.playerRage,
+                RagePerNormalAttack,
+                playerData.stats.wisdom
+            );
+
+            Debug.Log(
+                $"Player dealt {damage} damage. " +
+                $"{enemyData.enemyName} HP: {battleState.enemyCurrentHP}/{enemyData.maxHP}"
+            );
+        }
+
+        battleState.enemyRage = AddRage(
+            battleState.enemyRage,
+            RagePerHitTaken,
+            enemyData.wisdom
         );
 
         CheckBattleEnd();
     }
 
-    private void EnemyAttack()
+    private void EnemyAct()
     {
+        UltimateData ultimate = enemyData.equippedUltimate;
+        bool useUltimate = CanUseUltimate(battleState.enemyRage, ultimate);
+
         int damage = CalculateDamage(
             enemyData.attack,
             playerData.stats.defense
         );
+
+        if (useUltimate)
+        {
+            damage = CalculateUltimateDamage(damage, ultimate);
+            battleState.enemyRage = 0f;
+        }
 
         battleState.playerCurrentHP -= damage;
 
@@ -118,9 +186,31 @@ public class BattleSystem : MonoBehaviour
             battleState.playerCurrentHP = 0;
         }
 
-        Debug.Log(
-            $"{enemyData.enemyName} dealt {damage} damage. " +
-            $"Player HP: {battleState.playerCurrentHP}/{playerData.stats.hp}"
+        if (useUltimate)
+        {
+            Debug.Log(
+                $"{enemyData.enemyName} used {ultimate.ultimateName} for {damage} damage. " +
+                $"Player HP: {battleState.playerCurrentHP}/{playerData.stats.hp}"
+            );
+        }
+        else
+        {
+            battleState.enemyRage = AddRage(
+                battleState.enemyRage,
+                RagePerNormalAttack,
+                enemyData.wisdom
+            );
+
+            Debug.Log(
+                $"{enemyData.enemyName} dealt {damage} damage. " +
+                $"Player HP: {battleState.playerCurrentHP}/{playerData.stats.hp}"
+            );
+        }
+
+        battleState.playerRage = AddRage(
+            battleState.playerRage,
+            RagePerHitTaken,
+            playerData.stats.wisdom
         );
 
         CheckBattleEnd();
@@ -131,9 +221,35 @@ public class BattleSystem : MonoBehaviour
         return Mathf.Max(1, attackerAttack - defenderDefense);
     }
 
-    private float GetAttackInterval(int speed)
+    private int CalculateUltimateDamage(int normalDamage, UltimateData ultimate)
     {
-        return 3f / Mathf.Max(1f, speed * 0.2f);
+        return Mathf.Max(
+            1,
+            Mathf.RoundToInt(normalDamage * ultimate.damageMultiplier)
+        );
+    }
+
+    private bool CanUseUltimate(float rage, UltimateData ultimate)
+    {
+        return ultimate != null && rage >= RageThreshold;
+    }
+
+    private float AddRage(float currentRage, float baseGain, int wisdom)
+    {
+        float wisdomMultiplier = 1f +
+            Mathf.Max(0, wisdom) * RageGainPerWisdomPoint;
+
+        return Mathf.Min(
+            RageThreshold,
+            currentRage + baseGain * wisdomMultiplier
+        );
+    }
+
+    private float GetActionGain(int agility, float deltaTime)
+    {
+        return Mathf.Max(1, agility) *
+            ActionGainPerAgilityPerSecond *
+            Mathf.Max(0f, deltaTime);
     }
 
     private void CheckBattleEnd()
@@ -148,9 +264,8 @@ public class BattleSystem : MonoBehaviour
             battleState.battleRunning = false;
             battleState.battleResult = BattleResult.Victory;
 
-            RewardVictory();
-
             Debug.Log("Battle result: Victory");
+            BattleEnded?.Invoke(BattleResult.Victory);
             return;
         }
 
@@ -160,23 +275,8 @@ public class BattleSystem : MonoBehaviour
             battleState.battleResult = BattleResult.Defeat;
 
             Debug.Log("Battle result: Defeat");
+            BattleEnded?.Invoke(BattleResult.Defeat);
         }
-    }
-
-    private void RewardVictory()
-    {
-        if (battleState.rewardGranted)
-        {
-            return;
-        }
-
-        playerData.energy += enemyData.energyReward;
-        battleState.rewardGranted = true;
-
-        Debug.Log(
-            $"Victory reward: +{enemyData.energyReward} Energy. " +
-            $"Current Energy: {playerData.energy}"
-        );
     }
 
     public void ResetBattle()

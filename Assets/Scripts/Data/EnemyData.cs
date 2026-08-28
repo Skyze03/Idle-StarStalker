@@ -1,4 +1,5 @@
 using System;
+using UnityEngine.Serialization;
 
 [Serializable]
 public class EnemyData
@@ -8,23 +9,27 @@ public class EnemyData
     public int maxHP;
     public int attack;
     public int defense;
-    public int speed;
+    [FormerlySerializedAs("speed")]
+    public int agility;
+    public int wisdom;
 
-    public int energyReward;
+    public UltimateData equippedUltimate;
 
     public EnemyData(
         string enemyName,
         int maxHP,
         int attack,
         int defense,
-        int speed,
-        int energyReward)
+        int agility,
+        int wisdom,
+        UltimateData equippedUltimate)
     {
         this.enemyName = enemyName;
         this.maxHP = maxHP;
         this.attack = attack;
         this.defense = defense;
-        this.speed = speed;
-        this.energyReward = energyReward;
+        this.agility = agility;
+        this.wisdom = wisdom;
+        this.equippedUltimate = equippedUltimate;
     }
 }

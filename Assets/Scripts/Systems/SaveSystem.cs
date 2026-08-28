@@ -10,9 +10,9 @@ public class SaveSystem : MonoBehaviour
         saveFilePath = Path.Combine(Application.persistentDataPath, "save.json");
     }
 
-    public void SaveGame(PlayerData playerData, MeditationState meditationState, InventoryData inventoryData, BuffData buffData)
+    public void SaveGame(PlayerData playerData, MeditationState meditationState, InventoryData inventoryData, BuffData buffData, MainStageState mainStageState)
     {
-        if (playerData == null || meditationState == null || inventoryData == null || buffData == null)
+        if (playerData == null || meditationState == null || inventoryData == null || buffData == null || mainStageState == null)
         {
             Debug.LogWarning("SaveSystem: One or more data objects are null.");
             return;
@@ -41,13 +41,20 @@ public class SaveSystem : MonoBehaviour
         saveData.meditationExpBonus = buffData.meditationExpBonus;
         saveData.collectionEnergyBonus = buffData.collectionEnergyBonus;
 
+        saveData.mainStageInitialized = true;
+        saveData.selectedStage = mainStageState.selectedStage;
+        saveData.highestUnlockedStage = mainStageState.highestUnlockedStage;
+        saveData.highestClearedStage = mainStageState.highestClearedStage;
+        saveData.battleStamina = mainStageState.battleStamina;
+        saveData.lastStaminaRefreshUtcTicks = mainStageState.lastStaminaRefreshUtcTicks;
+
         string json = JsonUtility.ToJson(saveData, true);
         File.WriteAllText(saveFilePath, json);
 
         Debug.Log("Game saved to: " + saveFilePath);
     }
 
-    public bool LoadGame(PlayerData playerData, MeditationState meditationState, InventoryData inventoryData, BuffData buffData)
+    public bool LoadGame(PlayerData playerData, MeditationState meditationState, InventoryData inventoryData, BuffData buffData, MainStageState mainStageState)
     {
         if (!File.Exists(saveFilePath))
         {
@@ -55,7 +62,7 @@ public class SaveSystem : MonoBehaviour
             return false;
         }
 
-        if (playerData == null || meditationState == null || inventoryData == null || buffData == null)
+        if (playerData == null || meditationState == null || inventoryData == null || buffData == null || mainStageState == null)
         {
             Debug.LogWarning("SaveSystem: One or more data objects are null.");
             return false;
@@ -86,6 +93,20 @@ public class SaveSystem : MonoBehaviour
 
         buffData.meditationExpBonus = saveData.meditationExpBonus;
         buffData.collectionEnergyBonus = saveData.collectionEnergyBonus;
+
+        if (saveData.mainStageInitialized)
+        {
+            mainStageState.selectedStage = saveData.selectedStage;
+            mainStageState.highestUnlockedStage = saveData.highestUnlockedStage;
+            mainStageState.highestClearedStage = saveData.highestClearedStage;
+            mainStageState.battleStamina = saveData.battleStamina;
+            mainStageState.lastStaminaRefreshUtcTicks = saveData.lastStaminaRefreshUtcTicks;
+            mainStageState.Normalize();
+        }
+        else
+        {
+            mainStageState.ResetProgress();
+        }
 
         Debug.Log("Game loaded from: " + saveFilePath);
         return true;

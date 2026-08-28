@@ -15,6 +15,7 @@ public class PlayerData
     public int weaponLevel = 1;
 
     public PlayerStats stats = new PlayerStats();
+    public UltimateData equippedUltimate = UltimateData.CreateStarBurst();
 
     public void CalculateStats()
     {
@@ -31,7 +32,8 @@ public class PlayerData
         stats.hp = 100 + (legsLevel - 1) * 20;
         stats.attack = 10 + (weaponLevel - 1) * 5;
         stats.defense = 5 + (chestLevel - 1) * 3;
-        stats.speed = 5 + (feetLevel - 1) * 2;
+        stats.agility = 5 + (feetLevel - 1) * 2;
+        stats.wisdom = 5 + (headLevel - 1) * 2;
 
     }
 
@@ -73,8 +75,17 @@ public class PlayerData
         return currentLevel * 10;
     }
 
+    public bool CanUpgradePart(BodyPartType partType)
+    {
+        return GetPartLevel(partType) < level;
+    }
     public void UpgradePart(BodyPartType partType)
     {
+        if (!CanUpgradePart(partType))
+        {
+            return;
+        }
+
         switch (partType)
         {
             case BodyPartType.Head:
