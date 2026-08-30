@@ -14,6 +14,7 @@ public class EnemyData
     public int wisdom;
 
     public UltimateData equippedUltimate;
+    public EnemyTrait traits;
 
     public EnemyData(
         string enemyName,

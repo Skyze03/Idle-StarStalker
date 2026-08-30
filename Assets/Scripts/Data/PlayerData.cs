@@ -15,7 +15,24 @@ public class PlayerData
     public int weaponLevel = 1;
 
     public PlayerStats stats = new PlayerStats();
+    public string[] unlockedUltimateIds = { "star_burst" };
+    public string equippedUltimateId = "star_burst";
     public UltimateData equippedUltimate = UltimateData.CreateStarBurst();
+    public string[] ownedEquipmentIds;
+    public string equippedHeadItemId = "";
+    public string equippedChestItemId = "";
+    public string equippedArmsItemId = "";
+    public string equippedLegsItemId = "";
+    public string equippedFeetItemId = "";
+    public string equippedWeaponItemId = "";
+    public string equippedAccessoryItemId = "";
+
+    public void RefreshUltimate()
+    {
+        if (string.IsNullOrEmpty(equippedUltimateId))
+            equippedUltimateId = "star_burst";
+        equippedUltimate = UltimateData.GetById(equippedUltimateId);
+    }
 
     public void CalculateStats()
     {

@@ -30,4 +30,15 @@ public class SaveData
     public int highestClearedStage;
     public int battleStamina;
     public long lastStaminaRefreshUtcTicks;
+    public string[] unlockedUltimateIds;
+    public string equippedUltimateId;
+    public string[] ownedEquipmentIds;
+    public string equippedHeadItemId;
+    public string equippedChestItemId;
+    public string equippedArmsItemId;
+    public string equippedLegsItemId;
+    public string equippedFeetItemId;
+    public string equippedWeaponItemId;
+    public string equippedAccessoryItemId;
+    public bool equipmentInitialized;
 }

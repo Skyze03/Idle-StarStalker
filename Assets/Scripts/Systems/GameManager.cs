@@ -25,6 +25,10 @@ public class GameManager : MonoBehaviour
     [SerializeField] private BattleSystem battleSystem;
     [SerializeField] private BattleUI battleUI;
     [SerializeField] private MainStageSystem mainStageSystem;
+    [SerializeField] private UltimateSystem ultimateSystem;
+    [SerializeField] private UltimateUI ultimateUI;
+    [SerializeField] private EquipmentSystem equipmentSystem;
+    [SerializeField] private EquipmentUI equipmentUI;
     private MeditationState meditationState;
     private InventoryData inventoryData;
     private BuffData buffData;
@@ -41,6 +45,8 @@ public class GameManager : MonoBehaviour
     public EnemyData EnemyDataRef => enemyData;
     public MainStageState MainStageStateRef => mainStageState;
     public MainStageSystem MainStageSystemRef => mainStageSystem;
+    public UltimateSystem UltimateSystemRef => ultimateSystem;
+    public EquipmentSystem EquipmentSystemRef => equipmentSystem;
 
     private void Awake()
     {
@@ -77,6 +83,13 @@ public class GameManager : MonoBehaviour
             UltimateData.CreateStarBurst()
         );
 
+        if (ultimateSystem == null)
+            ultimateSystem = gameObject.AddComponent<UltimateSystem>();
+        ultimateSystem.Setup(playerData, battleState);
+        if (equipmentSystem == null)
+            equipmentSystem = gameObject.AddComponent<EquipmentSystem>();
+        equipmentSystem.Setup(playerData, battleState);
+
         if (inventorySystem != null)
         {
             inventorySystem.Setup(inventoryData);
@@ -107,7 +120,8 @@ public class GameManager : MonoBehaviour
             battleSystem.Setup(
                 playerData,
                 battleState,
-                enemyData
+                enemyData,
+                equipmentSystem
             );
         }
 
@@ -124,7 +138,9 @@ public class GameManager : MonoBehaviour
                 battleSystem,
                 battleState,
                 enemyData,
-                mainStageState
+                mainStageState,
+                ultimateSystem,
+                equipmentSystem
             );
         }
         if (panelSwitcher != null)
@@ -174,9 +190,14 @@ public class GameManager : MonoBehaviour
             );
         }
 
+        if (ultimateUI != null)
+            ultimateUI.Setup(ultimateSystem, playerData, panelSwitcher);
+        if (equipmentUI != null)
+            equipmentUI.Setup(equipmentSystem, panelSwitcher);
+
         if (saveLoadUI != null && saveSystem != null)
         {
-            saveLoadUI.Setup(saveSystem, this);
+            saveLoadUI.Setup(saveSystem, this, battleState);
         }
 
         Debug.Log("Game initialized.");
@@ -212,6 +233,9 @@ public class GameManager : MonoBehaviour
         if (statsUI != null) statsUI.Refresh();
         if (panelSwitcher != null) panelSwitcher.Refresh();
         if (battleUI != null) battleUI.Refresh();
+        if (ultimateUI != null) ultimateUI.Refresh();
+        if (equipmentUI != null) equipmentUI.Refresh();
+        if (saveLoadUI != null) saveLoadUI.Refresh();
     }
 
     public void HandleGameLoaded()
@@ -219,6 +243,14 @@ public class GameManager : MonoBehaviour
         if (mainStageSystem != null)
         {
             mainStageSystem.RefreshAfterLoad();
+        }
+        if (ultimateSystem != null)
+        {
+            ultimateSystem.NormalizePlayerUltimates();
+        }
+        if (equipmentSystem != null)
+        {
+            equipmentSystem.Normalize(mainStageState?.highestClearedStage ?? 0);
         }
     }
 }

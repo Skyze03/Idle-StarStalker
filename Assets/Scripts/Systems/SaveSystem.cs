@@ -47,6 +47,17 @@ public class SaveSystem : MonoBehaviour
         saveData.highestClearedStage = mainStageState.highestClearedStage;
         saveData.battleStamina = mainStageState.battleStamina;
         saveData.lastStaminaRefreshUtcTicks = mainStageState.lastStaminaRefreshUtcTicks;
+        saveData.unlockedUltimateIds = playerData.unlockedUltimateIds;
+        saveData.equippedUltimateId = playerData.equippedUltimateId;
+        saveData.ownedEquipmentIds = playerData.ownedEquipmentIds;
+        saveData.equippedHeadItemId = playerData.equippedHeadItemId;
+        saveData.equippedChestItemId = playerData.equippedChestItemId;
+        saveData.equippedArmsItemId = playerData.equippedArmsItemId;
+        saveData.equippedLegsItemId = playerData.equippedLegsItemId;
+        saveData.equippedFeetItemId = playerData.equippedFeetItemId;
+        saveData.equippedWeaponItemId = playerData.equippedWeaponItemId;
+        saveData.equippedAccessoryItemId = playerData.equippedAccessoryItemId;
+        saveData.equipmentInitialized = true;
 
         string json = JsonUtility.ToJson(saveData, true);
         File.WriteAllText(saveFilePath, json);
@@ -81,6 +92,35 @@ public class SaveSystem : MonoBehaviour
         playerData.chestLevel = saveData.chestLevel;
         playerData.feetLevel = saveData.feetLevel;
         playerData.weaponLevel = saveData.weaponLevel;
+
+        playerData.unlockedUltimateIds = saveData.unlockedUltimateIds;
+        playerData.equippedUltimateId = saveData.equippedUltimateId;
+        if (playerData.unlockedUltimateIds == null ||
+            playerData.unlockedUltimateIds.Length == 0)
+        {
+            playerData.unlockedUltimateIds = new[] { "star_burst" };
+        }
+        playerData.RefreshUltimate();
+        playerData.ownedEquipmentIds = saveData.ownedEquipmentIds;
+        playerData.equippedHeadItemId = saveData.equippedHeadItemId;
+        playerData.equippedChestItemId = saveData.equippedChestItemId;
+        playerData.equippedArmsItemId = saveData.equippedArmsItemId;
+        playerData.equippedLegsItemId = saveData.equippedLegsItemId;
+        playerData.equippedFeetItemId = saveData.equippedFeetItemId;
+        playerData.equippedWeaponItemId = saveData.equippedWeaponItemId;
+        playerData.equippedAccessoryItemId = saveData.equippedAccessoryItemId;
+
+        if (!saveData.equipmentInitialized)
+        {
+            var legacyOwned = new System.Collections.Generic.List<string>();
+            for (int stage = 1; stage <= saveData.highestClearedStage; stage++)
+            {
+                string itemId = EquipmentSystem.GetStageEquipmentId(stage);
+                if (!string.IsNullOrEmpty(itemId) && !legacyOwned.Contains(itemId))
+                    legacyOwned.Add(itemId);
+            }
+            playerData.ownedEquipmentIds = legacyOwned.ToArray();
+        }
 
         playerData.CalculateStats();
 

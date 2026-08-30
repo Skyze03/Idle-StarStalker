@@ -30,6 +30,13 @@ public class BattleUI : MonoBehaviour
     [SerializeField] private Button previousStageButton;
     [SerializeField] private Button nextStageButton;
     [SerializeField] private Button sweepButton;
+    [SerializeField] private TMP_Text enemyStatsText;
+    [SerializeField] private TMP_Text rewardPreviewText;
+    [SerializeField] private TMP_Text stageFeedbackText;
+    [SerializeField] private Button buildSummaryButton;
+    [SerializeField] private GameObject buildSummaryPanel;
+    [SerializeField] private TMP_Text buildSummaryText;
+    [SerializeField] private Button closeBuildSummaryButton;
 
     private BattleSystem battleSystem;
     private PlayerData playerData;
@@ -83,6 +90,18 @@ public class BattleUI : MonoBehaviour
             sweepButton.onClick.AddListener(OnSweepClicked);
         }
 
+        if (buildSummaryButton != null)
+        {
+            buildSummaryButton.onClick.RemoveAllListeners();
+            buildSummaryButton.onClick.AddListener(OnBuildSummaryClicked);
+        }
+        if (closeBuildSummaryButton != null)
+        {
+            closeBuildSummaryButton.onClick.RemoveAllListeners();
+            closeBuildSummaryButton.onClick.AddListener(OnCloseBuildSummaryClicked);
+        }
+        if (buildSummaryPanel != null) buildSummaryPanel.SetActive(false);
+
         Refresh();
     }
 
@@ -95,7 +114,14 @@ public class BattleUI : MonoBehaviour
 
         if (playerNameText != null)
         {
-            playerNameText.text = "Player";
+            UltimateData displayedUltimate = battleState.battleRunning &&
+                battleSystem.PlayerBuild != null
+                    ? battleSystem.PlayerBuild.ultimate
+                    : playerData.equippedUltimate;
+            string playerUltimate = displayedUltimate != null
+                ? displayedUltimate.ultimateName
+                : "None";
+            playerNameText.text = $"Player — ULT {playerUltimate}";
         }
 
         if (enemyNameText != null)
@@ -105,25 +131,37 @@ public class BattleUI : MonoBehaviour
 
         if (playerHPText != null)
         {
+            int playerMaxHP = battleState.battleRunning && battleSystem.PlayerBuild != null
+                ? battleSystem.PlayerBuild.maxHP
+                : playerData.stats.hp;
             playerHPText.text =
-                $"HP: {battleState.playerCurrentHP} / {playerData.stats.hp}";
+                $"HP: {battleState.playerCurrentHP} / {playerMaxHP}";
         }
 
         if (enemyHPText != null)
         {
+            int enemyMaxHP = battleState.battleRunning && battleSystem.EnemyBuild != null
+                ? battleSystem.EnemyBuild.maxHP
+                : enemyData.maxHP;
             enemyHPText.text =
-                $"HP: {battleState.enemyCurrentHP} / {enemyData.maxHP}";
+                $"HP: {battleState.enemyCurrentHP} / {enemyMaxHP}";
         }
 
         if (playerHPSlider != null)
         {
-            playerHPSlider.maxValue = playerData.stats.hp;
+            playerHPSlider.maxValue = battleState.battleRunning &&
+                battleSystem.PlayerBuild != null
+                    ? battleSystem.PlayerBuild.maxHP
+                    : playerData.stats.hp;
             playerHPSlider.value = battleState.playerCurrentHP;
         }
 
         if (enemyHPSlider != null)
         {
-            enemyHPSlider.maxValue = enemyData.maxHP;
+            enemyHPSlider.maxValue = battleState.battleRunning &&
+                battleSystem.EnemyBuild != null
+                    ? battleSystem.EnemyBuild.maxHP
+                    : enemyData.maxHP;
             enemyHPSlider.value = battleState.enemyCurrentHP;
         }
 
@@ -190,6 +228,12 @@ public class BattleUI : MonoBehaviour
             returnButton.interactable = !battleState.battleRunning;
         }
 
+        if (buildSummaryButton != null)
+            buildSummaryButton.interactable = !battleState.battleRunning;
+
+        if (battleState.battleRunning && buildSummaryPanel != null)
+            buildSummaryPanel.SetActive(false);
+
         RefreshMainStageUI();
     }
 
@@ -203,12 +247,15 @@ public class BattleUI : MonoBehaviour
         MainStageState state = mainStageSystem.State;
 
         if (selectedStageText != null)
-            selectedStageText.text = $"Stage {state.selectedStage}";
+            selectedStageText.text = state.selectedStage == MainStageSystem.TotalStages
+                ? $"Stage {state.selectedStage} — FINAL"
+                : $"Stage {state.selectedStage}";
 
         if (stageProgressText != null)
         {
-            stageProgressText.text =
-                $"Cleared: {state.highestClearedStage} / {MainStageSystem.TotalStages}";
+            stageProgressText.text = mainStageSystem.IsPrototypeComplete
+                ? "MAIN STORY COMPLETE"
+                : $"Cleared: {state.highestClearedStage} / {MainStageSystem.TotalStages}";
         }
 
         if (battleStaminaText != null)
@@ -237,6 +284,54 @@ public class BattleUI : MonoBehaviour
 
         if (sweepButton != null)
             sweepButton.interactable = mainStageSystem.CanSweepSelectedStage();
+
+        if (enemyStatsText != null)
+        {
+            string ultimateName = enemyData.equippedUltimate != null
+                ? enemyData.equippedUltimate.ultimateName
+                : "None";
+            enemyStatsText.text =
+                $"ATK {enemyData.attack}  DEF {enemyData.defense}  " +
+                $"AGI {enemyData.agility}  WIS {enemyData.wisdom}  ULT {ultimateName}\n" +
+                $"Trait: {EnemyTraitUtility.GetDescription(enemyData.traits)}";
+        }
+
+        if (rewardPreviewText != null)
+        {
+            RewardBundle normal = mainStageSystem.GetNormalReward(state.selectedStage);
+            rewardPreviewText.text = $"Reward: {FormatReward(normal)}";
+
+            if (!mainStageSystem.IsSelectedStageCleared)
+            {
+                RewardBundle firstClear =
+                    mainStageSystem.GetFirstClearReward(state.selectedStage);
+                rewardPreviewText.text += $"  First: {FormatReward(firstClear)}";
+
+                string unlockId =
+                    mainStageSystem.GetUltimateUnlockForStage(state.selectedStage);
+                if (!string.IsNullOrEmpty(unlockId))
+                {
+                    rewardPreviewText.text +=
+                        $" + Unlock {UltimateData.GetById(unlockId).ultimateName}";
+                }
+
+                string equipmentId =
+                    mainStageSystem.GetEquipmentUnlockForStage(state.selectedStage);
+                EquipmentData equipmentDrop = EquipmentData.GetById(equipmentId);
+                if (equipmentDrop != null)
+                    rewardPreviewText.text += $" + Equipment {equipmentDrop.itemName}";
+            }
+            else if (mainStageSystem.IsPrototypeComplete &&
+                state.selectedStage == MainStageSystem.TotalStages)
+            {
+                rewardPreviewText.text += "  Prototype finale cleared — replay available";
+            }
+        }
+
+        if (stageFeedbackText != null)
+            stageFeedbackText.text = battleState.battleRunning
+                ? battleSystem.CombatLogText
+                : mainStageSystem.LastFeedback;
     }
 
     private void OnStartBattleClicked()
@@ -254,6 +349,7 @@ public class BattleUI : MonoBehaviour
         {
             battleSystem.StartBattle();
         }
+        if (buildSummaryPanel != null) buildSummaryPanel.SetActive(false);
         Refresh();
     }
 
@@ -290,5 +386,56 @@ public class BattleUI : MonoBehaviour
 
         mainStageSystem.TrySweepStage(mainStageSystem.State.selectedStage);
         Refresh();
+    }
+
+    private void OnBuildSummaryClicked()
+    {
+        if (battleState == null || battleState.battleRunning ||
+            buildSummaryPanel == null) return;
+        RefreshBuildSummary();
+        buildSummaryPanel.SetActive(true);
+        buildSummaryPanel.transform.SetAsLastSibling();
+    }
+
+    private void OnCloseBuildSummaryClicked()
+    {
+        if (buildSummaryPanel != null) buildSummaryPanel.SetActive(false);
+    }
+
+    private void RefreshBuildSummary()
+    {
+        if (buildSummaryText == null || battleSystem == null) return;
+        CombatBuildSnapshot build = battleSystem.CreatePlayerBuildPreview();
+        if (build == null) return;
+
+        string equipmentLines = string.Empty;
+        EquipmentSystem equipment = battleSystem.EquipmentSystem;
+        foreach (EquipmentSlot slot in System.Enum.GetValues(typeof(EquipmentSlot)))
+        {
+            EquipmentData item = equipment?.GetEquipped(slot);
+            equipmentLines += item == null
+                ? $"{slot}: None\n"
+                : $"{slot}: {item.itemName} — {item.description}\n";
+        }
+
+        buildSummaryText.text =
+            $"ULTIMATE\n{build.ultimate.ultimateName}: {build.ultimate.description}\n\n" +
+            $"FINAL COMBAT STATS\nHP {build.maxHP}   ATK {build.attack}   " +
+            $"DEF {build.defense}\nAGI {build.agility}   WIS {build.wisdom}\n" +
+            $"Rage/Attack +{build.bonusRageOnAttack:0}   " +
+            $"Rage/Hit +{build.bonusRageOnHit:0}\n\n" +
+            "EQUIPMENT\n" + equipmentLines;
+    }
+
+    private string FormatReward(RewardBundle reward)
+    {
+        if (reward == null) return "None";
+
+        string result = $"{reward.energy} Energy";
+        if (reward.memoryFragments > 0)
+            result += $", {reward.memoryFragments} Fragments";
+        if (reward.runes > 0)
+            result += $", {reward.runes} Runes";
+        return result;
     }
 }

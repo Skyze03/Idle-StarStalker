@@ -9,11 +9,13 @@ public class SaveLoadUI : MonoBehaviour
 
     private SaveSystem saveSystem;
     private GameManager gameManager;
+    private BattleState battleState;
 
-    public void Setup(SaveSystem system, GameManager manager)
+    public void Setup(SaveSystem system, GameManager manager, BattleState state)
     {
         saveSystem = system;
         gameManager = manager;
+        battleState = state;
 
         if (saveButton != null)
         {
@@ -28,8 +30,16 @@ public class SaveLoadUI : MonoBehaviour
         }
     }
 
+    public void Refresh()
+    {
+        bool locked = battleState != null && battleState.battleRunning;
+        if (saveButton != null) saveButton.interactable = !locked;
+        if (loadButton != null) loadButton.interactable = !locked;
+    }
+
     private void OnSaveClicked()
     {
+        if (battleState != null && battleState.battleRunning) return;
         if (saveSystem == null || gameManager == null)
         {
             Debug.LogWarning("SaveLoadUI: saveSystem or gameManager is null.");
@@ -47,6 +57,7 @@ public class SaveLoadUI : MonoBehaviour
 
     private void OnLoadClicked()
     {
+        if (battleState != null && battleState.battleRunning) return;
         if (saveSystem == null || gameManager == null)
         {
             Debug.LogWarning("SaveLoadUI: saveSystem or gameManager is null.");

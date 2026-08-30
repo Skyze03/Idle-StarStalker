@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using UnityEngine;
 
 public class BattleSystem : MonoBehaviour
@@ -15,19 +16,37 @@ public class BattleSystem : MonoBehaviour
     private PlayerData playerData;
     private BattleState battleState;
     private EnemyData enemyData;
+    private EquipmentSystem equipmentSystem;
+    private CombatBuildSnapshot playerBuild;
+    private CombatBuildSnapshot enemyBuild;
+    private readonly Queue<string> combatLog = new Queue<string>();
 
     public BattleState BattleState => battleState;
     public EnemyData EnemyData => enemyData;
+    public CombatBuildSnapshot PlayerBuild => playerBuild;
+    public CombatBuildSnapshot EnemyBuild => enemyBuild;
+    public EquipmentSystem EquipmentSystem => equipmentSystem;
+    public string CombatLogText => string.Join("\n", combatLog);
     public event Action<BattleResult> BattleEnded;
+
+    public CombatBuildSnapshot CreatePlayerBuildPreview()
+    {
+        if (playerData == null) return null;
+        playerData.CalculateStats();
+        playerData.RefreshUltimate();
+        return CombatBuildSnapshot.FromPlayer(playerData, equipmentSystem);
+    }
 
     public void Setup(
         PlayerData playerData,
         BattleState battleState,
-        EnemyData enemyData)
+        EnemyData enemyData,
+        EquipmentSystem equipmentSystem)
     {
         this.playerData = playerData;
         this.battleState = battleState;
         this.enemyData = enemyData;
+        this.equipmentSystem = equipmentSystem;
 
         ResetBattle();
     }
@@ -48,23 +67,27 @@ public class BattleSystem : MonoBehaviour
 
         // Make sure permanent player stats are up to date.
         playerData.CalculateStats();
+        playerData.RefreshUltimate();
+        playerBuild = CombatBuildSnapshot.FromPlayer(playerData, equipmentSystem);
+        enemyBuild = CombatBuildSnapshot.FromEnemy(enemyData);
+        combatLog.Clear();
 
-        battleState.playerCurrentHP = playerData.stats.hp;
-        battleState.enemyCurrentHP = enemyData.maxHP;
+        battleState.playerCurrentHP = playerBuild.maxHP;
+        battleState.enemyCurrentHP = enemyBuild.maxHP;
 
         battleState.playerActionValue = 0f;
         battleState.enemyActionValue = 0f;
         battleState.playerRage = 0f;
         battleState.enemyRage = 0f;
+        battleState.playerAgilityBuffActions = 0;
+        battleState.enemyAgilityBuffActions = 0;
 
         battleState.battleRunning = true;
         battleState.battleResult = BattleResult.None;
         battleState.rewardGranted = false;
 
-        Debug.Log(
-            $"Battle started: Player HP {battleState.playerCurrentHP} " +
-            $"vs {enemyData.enemyName} HP {battleState.enemyCurrentHP}"
-        );
+        Record($"Build locked: {playerBuild.ultimate.ultimateName} vs " +
+            $"{enemyBuild.ultimate.ultimateName}");
         return true;
     }
 
@@ -76,11 +99,19 @@ public class BattleSystem : MonoBehaviour
         }
 
         battleState.playerActionValue += GetActionGain(
-            playerData.stats.agility,
+            GetEffectiveAgility(
+                playerBuild.agility,
+                battleState.playerAgilityBuffActions,
+                playerBuild.ultimate
+            ),
             deltaTime
         );
         battleState.enemyActionValue += GetActionGain(
-            enemyData.agility,
+            GetEffectiveAgility(
+                enemyBuild.agility,
+                battleState.enemyAgilityBuffActions,
+                enemyBuild.ultimate
+            ),
             deltaTime
         );
 
@@ -112,18 +143,34 @@ public class BattleSystem : MonoBehaviour
 
     private void PlayerAct()
     {
-        UltimateData ultimate = playerData.equippedUltimate;
+        UltimateData ultimate = playerBuild.ultimate;
         bool useUltimate = CanUseUltimate(battleState.playerRage, ultimate);
+        bool consumeExistingBuff = battleState.playerAgilityBuffActions > 0;
 
         int damage = CalculateDamage(
-            playerData.stats.attack,
-            enemyData.defense
+            playerBuild.attack,
+            enemyBuild.defense
         );
 
         if (useUltimate)
         {
-            damage = CalculateUltimateDamage(damage, ultimate);
-            battleState.playerRage = 0f;
+            int hitCount;
+            damage = ResolveUltimate(
+                damage, playerBuild.defense, ultimate,
+                ref battleState.playerAgilityBuffActions, out hitCount
+            );
+            battleState.playerRage = ultimate.effectType == UltimateEffectType.RageRefund
+                ? 40f
+                : 0f;
+
+            if (damage > 0)
+            {
+                battleState.enemyRage = AddRage(
+                    battleState.enemyRage,
+                    RagePerHitTaken * hitCount,
+                    enemyBuild.wisdom
+                );
+            }
         }
 
         battleState.enemyCurrentHP -= damage;
@@ -135,48 +182,73 @@ public class BattleSystem : MonoBehaviour
 
         if (useUltimate)
         {
-            Debug.Log(
-                $"Player used {ultimate.ultimateName} for {damage} damage. " +
-                $"{enemyData.enemyName} HP: {battleState.enemyCurrentHP}/{enemyData.maxHP}"
-            );
+            Record(ultimate.effectType == UltimateEffectType.AgilityBuff
+                ? $"Player used {ultimate.ultimateName}: Agility boosted for 3 actions."
+                : $"Player used {ultimate.ultimateName}: {damage} damage.");
         }
         else
         {
             battleState.playerRage = AddRage(
                 battleState.playerRage,
                 RagePerNormalAttack,
-                playerData.stats.wisdom
+                playerBuild.wisdom
+            );
+            battleState.playerRage = AddRage(
+                battleState.playerRage,
+                playerBuild.bonusRageOnAttack,
+                0
             );
 
-            Debug.Log(
-                $"Player dealt {damage} damage. " +
-                $"{enemyData.enemyName} HP: {battleState.enemyCurrentHP}/{enemyData.maxHP}"
-            );
+            Record($"Player attacked: {damage} damage.");
         }
 
-        battleState.enemyRage = AddRage(
-            battleState.enemyRage,
-            RagePerHitTaken,
-            enemyData.wisdom
-        );
+        if (!useUltimate)
+            battleState.enemyRage = AddRage(
+                battleState.enemyRage, RagePerHitTaken, enemyBuild.wisdom
+            );
+
+        if (damage > 0)
+            battleState.enemyRage = AddRage(
+                battleState.enemyRage, enemyBuild.bonusRageOnHit, 0
+            );
+
+        if (consumeExistingBuff &&
+            (!useUltimate || ultimate.effectType != UltimateEffectType.AgilityBuff))
+            battleState.playerAgilityBuffActions--;
 
         CheckBattleEnd();
     }
 
     private void EnemyAct()
     {
-        UltimateData ultimate = enemyData.equippedUltimate;
+        UltimateData ultimate = enemyBuild.ultimate;
         bool useUltimate = CanUseUltimate(battleState.enemyRage, ultimate);
+        bool consumeExistingBuff = battleState.enemyAgilityBuffActions > 0;
 
         int damage = CalculateDamage(
-            enemyData.attack,
-            playerData.stats.defense
+            enemyBuild.attack,
+            playerBuild.defense
         );
 
         if (useUltimate)
         {
-            damage = CalculateUltimateDamage(damage, ultimate);
-            battleState.enemyRage = 0f;
+            int hitCount;
+            damage = ResolveUltimate(
+                damage, enemyBuild.defense, ultimate,
+                ref battleState.enemyAgilityBuffActions, out hitCount
+            );
+            battleState.enemyRage = ultimate.effectType == UltimateEffectType.RageRefund
+                ? 40f
+                : 0f;
+
+            if (damage > 0)
+            {
+                battleState.playerRage = AddRage(
+                    battleState.playerRage,
+                    RagePerHitTaken * hitCount,
+                    playerBuild.wisdom
+                );
+            }
         }
 
         battleState.playerCurrentHP -= damage;
@@ -188,30 +260,39 @@ public class BattleSystem : MonoBehaviour
 
         if (useUltimate)
         {
-            Debug.Log(
-                $"{enemyData.enemyName} used {ultimate.ultimateName} for {damage} damage. " +
-                $"Player HP: {battleState.playerCurrentHP}/{playerData.stats.hp}"
-            );
+            Record(ultimate.effectType == UltimateEffectType.AgilityBuff
+                ? $"Enemy used {ultimate.ultimateName}: Agility boosted for 3 actions."
+                : $"Enemy used {ultimate.ultimateName}: {damage} damage.");
         }
         else
         {
             battleState.enemyRage = AddRage(
                 battleState.enemyRage,
                 RagePerNormalAttack,
-                enemyData.wisdom
+                enemyBuild.wisdom
+            );
+            battleState.enemyRage = AddRage(
+                battleState.enemyRage,
+                enemyBuild.bonusRageOnAttack,
+                0
             );
 
-            Debug.Log(
-                $"{enemyData.enemyName} dealt {damage} damage. " +
-                $"Player HP: {battleState.playerCurrentHP}/{playerData.stats.hp}"
-            );
+            Record($"Enemy attacked: {damage} damage.");
         }
 
-        battleState.playerRage = AddRage(
-            battleState.playerRage,
-            RagePerHitTaken,
-            playerData.stats.wisdom
-        );
+        if (!useUltimate)
+            battleState.playerRage = AddRage(
+                battleState.playerRage, RagePerHitTaken, playerBuild.wisdom
+            );
+
+        if (damage > 0)
+            battleState.playerRage = AddRage(
+                battleState.playerRage, playerBuild.bonusRageOnHit, 0
+            );
+
+        if (consumeExistingBuff &&
+            (!useUltimate || ultimate.effectType != UltimateEffectType.AgilityBuff))
+            battleState.enemyAgilityBuffActions--;
 
         CheckBattleEnd();
     }
@@ -221,12 +302,42 @@ public class BattleSystem : MonoBehaviour
         return Mathf.Max(1, attackerAttack - defenderDefense);
     }
 
-    private int CalculateUltimateDamage(int normalDamage, UltimateData ultimate)
+    private int ResolveUltimate(
+        int normalDamage,
+        int attackerDefense,
+        UltimateData ultimate,
+        ref int agilityBuffActions,
+        out int hitCount)
     {
-        return Mathf.Max(
-            1,
-            Mathf.RoundToInt(normalDamage * ultimate.damageMultiplier)
-        );
+        hitCount = 1;
+        switch (ultimate.effectType)
+        {
+            case UltimateEffectType.DefenseScaling:
+                return Mathf.Max(1, normalDamage +
+                    Mathf.RoundToInt(attackerDefense * ultimate.power));
+            case UltimateEffectType.MultiHit:
+                hitCount = Mathf.Max(1, ultimate.hitCount);
+                return Mathf.Max(1,
+                    Mathf.RoundToInt(normalDamage * ultimate.power) * hitCount);
+            case UltimateEffectType.AgilityBuff:
+                agilityBuffActions = 3;
+                return 0;
+            default:
+                return Mathf.Max(1, Mathf.RoundToInt(normalDamage * ultimate.power));
+        }
+    }
+
+    private int GetEffectiveAgility(
+        int baseAgility,
+        int buffActions,
+        UltimateData equippedUltimate)
+    {
+        if (buffActions <= 0) return baseAgility;
+        float bonus = equippedUltimate != null &&
+            equippedUltimate.effectType == UltimateEffectType.AgilityBuff
+                ? equippedUltimate.power
+                : 0.5f;
+        return Mathf.Max(1, Mathf.RoundToInt(baseAgility * (1f + bonus)));
     }
 
     private bool CanUseUltimate(float rage, UltimateData ultimate)
@@ -265,6 +376,7 @@ public class BattleSystem : MonoBehaviour
             battleState.battleResult = BattleResult.Victory;
 
             Debug.Log("Battle result: Victory");
+            Record("Battle ended: Victory.");
             BattleEnded?.Invoke(BattleResult.Victory);
             return;
         }
@@ -275,6 +387,7 @@ public class BattleSystem : MonoBehaviour
             battleState.battleResult = BattleResult.Defeat;
 
             Debug.Log("Battle result: Defeat");
+            Record("Battle ended: Defeat.");
             BattleEnded?.Invoke(BattleResult.Defeat);
         }
     }
@@ -298,5 +411,12 @@ public class BattleSystem : MonoBehaviour
         {
             battleState.enemyCurrentHP = enemyData.maxHP;
         }
+    }
+
+    private void Record(string message)
+    {
+        if (combatLog.Count >= 2) combatLog.Dequeue();
+        combatLog.Enqueue(message);
+        Debug.Log(message);
     }
 }

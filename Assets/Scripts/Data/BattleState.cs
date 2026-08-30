@@ -22,6 +22,8 @@ public class BattleState
     // Rage is shared by the player/enemy combat model and fuels ultimates.
     public float playerRage;
     public float enemyRage;
+    public int playerAgilityBuffActions;
+    public int enemyAgilityBuffActions;
 
     // Current battle status.
     public bool battleRunning;
@@ -44,6 +46,8 @@ public class BattleState
         enemyActionValue = 0f;
         playerRage = 0f;
         enemyRage = 0f;
+        playerAgilityBuffActions = 0;
+        enemyAgilityBuffActions = 0;
 
         battleRunning = false;
         battleResult = BattleResult.None;

@@ -13,6 +13,8 @@ public class PanelSwitcher : MonoBehaviour
     [SerializeField] private GameObject combinerPanel;
     [SerializeField] private GameObject statsPanel;
     [SerializeField] private GameObject battlePanel;
+    [SerializeField] private GameObject ultimatePanel;
+    [SerializeField] private GameObject equipmentPanel;
 
     [Header("Navigation Buttons")]
     [SerializeField] private Button goToCollectionButton;
@@ -21,6 +23,8 @@ public class PanelSwitcher : MonoBehaviour
     [SerializeField] private Button goToCombinerButton;
     [SerializeField] private Button goToStatsButton;
     [SerializeField] private Button goToBattleButton;
+    [SerializeField] private Button goToUltimateButton;
+    [SerializeField] private Button goToEquipmentButton;
 
     public void Setup(BattleState battleState)
     {
@@ -62,6 +66,17 @@ public class PanelSwitcher : MonoBehaviour
             goToBattleButton.onClick.AddListener(OnGoToBattleClicked);
         }
 
+        if (goToUltimateButton != null)
+        {
+            goToUltimateButton.onClick.RemoveAllListeners();
+            goToUltimateButton.onClick.AddListener(ShowUltimatePanel);
+        }
+        if (goToEquipmentButton != null)
+        {
+            goToEquipmentButton.onClick.RemoveAllListeners();
+            goToEquipmentButton.onClick.AddListener(ShowEquipmentPanel);
+        }
+
         ShowMeditationPanel();
         Refresh();
     }
@@ -80,6 +95,10 @@ public class PanelSwitcher : MonoBehaviour
             goToCombinerButton.interactable = !navigationLocked;
         if (goToStatsButton != null)
             goToStatsButton.interactable = !navigationLocked;
+        if (goToUltimateButton != null)
+            goToUltimateButton.interactable = !navigationLocked;
+        if (goToEquipmentButton != null)
+            goToEquipmentButton.interactable = !navigationLocked;
     }
 
     private bool IsBattleRunning()
@@ -109,6 +128,8 @@ public class PanelSwitcher : MonoBehaviour
         if (combinerPanel != null) combinerPanel.SetActive(false);
         if (statsPanel != null) statsPanel.SetActive(false);
         if (battlePanel != null) battlePanel.SetActive(false);
+        if (ultimatePanel != null) ultimatePanel.SetActive(false);
+        if (equipmentPanel != null) equipmentPanel.SetActive(false);
     }
 
     public void ShowCollectionPanel()
@@ -122,6 +143,8 @@ public class PanelSwitcher : MonoBehaviour
         if (combinerPanel != null) combinerPanel.SetActive(false);
         if (statsPanel != null) statsPanel.SetActive(false);
         if (battlePanel != null) battlePanel.SetActive(false);
+        if (ultimatePanel != null) ultimatePanel.SetActive(false);
+        if (equipmentPanel != null) equipmentPanel.SetActive(false);
     }
 
     public void ShowUpgradePanel()
@@ -135,6 +158,8 @@ public class PanelSwitcher : MonoBehaviour
         if (combinerPanel != null) combinerPanel.SetActive(false);
         if (statsPanel != null) statsPanel.SetActive(false);
         if (battlePanel != null) battlePanel.SetActive(false);
+        if (ultimatePanel != null) ultimatePanel.SetActive(false);
+        if (equipmentPanel != null) equipmentPanel.SetActive(false);
     }
 
     public void ShowInventoryPanel()
@@ -148,6 +173,8 @@ public class PanelSwitcher : MonoBehaviour
         if (combinerPanel != null) combinerPanel.SetActive(false);
         if (statsPanel != null) statsPanel.SetActive(false);
         if (battlePanel != null) battlePanel.SetActive(false);
+        if (ultimatePanel != null) ultimatePanel.SetActive(false);
+        if (equipmentPanel != null) equipmentPanel.SetActive(false);
     }
 
     public void ShowCombinerPanel()
@@ -161,6 +188,8 @@ public class PanelSwitcher : MonoBehaviour
         if (combinerPanel != null) combinerPanel.SetActive(true);
         if (statsPanel != null) statsPanel.SetActive(false);
         if (battlePanel != null) battlePanel.SetActive(false);
+        if (ultimatePanel != null) ultimatePanel.SetActive(false);
+        if (equipmentPanel != null) equipmentPanel.SetActive(false);
     }
 
     public void ShowStatsPanel()
@@ -174,6 +203,8 @@ public class PanelSwitcher : MonoBehaviour
         if (combinerPanel != null) combinerPanel.SetActive(false);
         if (statsPanel != null) statsPanel.SetActive(true);
         if (battlePanel != null) battlePanel.SetActive(false);
+        if (ultimatePanel != null) ultimatePanel.SetActive(false);
+        if (equipmentPanel != null) equipmentPanel.SetActive(false);
     }
 
     public void ShowBattlePanel()
@@ -185,6 +216,36 @@ public class PanelSwitcher : MonoBehaviour
         if (combinerPanel != null) combinerPanel.SetActive(false);
         if (statsPanel != null) statsPanel.SetActive(false);
         if (battlePanel != null) battlePanel.SetActive(true);
+        if (ultimatePanel != null) ultimatePanel.SetActive(false);
+        if (equipmentPanel != null) equipmentPanel.SetActive(false);
+    }
+
+    public void ShowUltimatePanel()
+    {
+        if (!CanLeaveBattle()) return;
+        if (meditationPanel != null) meditationPanel.SetActive(false);
+        if (collectionPanel != null) collectionPanel.SetActive(false);
+        if (upgradePanel != null) upgradePanel.SetActive(false);
+        if (inventoryPanel != null) inventoryPanel.SetActive(false);
+        if (combinerPanel != null) combinerPanel.SetActive(false);
+        if (statsPanel != null) statsPanel.SetActive(false);
+        if (battlePanel != null) battlePanel.SetActive(false);
+        if (ultimatePanel != null) ultimatePanel.SetActive(true);
+        if (equipmentPanel != null) equipmentPanel.SetActive(false);
+    }
+
+    public void ShowEquipmentPanel()
+    {
+        if (!CanLeaveBattle()) return;
+        if (meditationPanel != null) meditationPanel.SetActive(false);
+        if (collectionPanel != null) collectionPanel.SetActive(false);
+        if (upgradePanel != null) upgradePanel.SetActive(false);
+        if (inventoryPanel != null) inventoryPanel.SetActive(false);
+        if (combinerPanel != null) combinerPanel.SetActive(false);
+        if (statsPanel != null) statsPanel.SetActive(false);
+        if (battlePanel != null) battlePanel.SetActive(false);
+        if (ultimatePanel != null) ultimatePanel.SetActive(false);
+        if (equipmentPanel != null) equipmentPanel.SetActive(true);
     }
 
     private void OnGoToCollectionClicked()

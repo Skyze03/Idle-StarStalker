@@ -14,10 +14,16 @@ public class MainStageSystem : MonoBehaviour
     private BattleState battleState;
     private EnemyData enemyData;
     private MainStageState stageState;
+    private UltimateSystem ultimateSystem;
+    private EquipmentSystem equipmentSystem;
     private int activeStage;
 
     public MainStageState State => stageState;
     public int ActiveStage => activeStage;
+    public bool IsPrototypeComplete =>
+        stageState != null && stageState.highestClearedStage >= TotalStages;
+    public string LastFeedback { get; private set; } =
+        "Select a stage to view its enemy and rewards.";
     public bool IsSelectedStageCleared =>
         stageState != null &&
         stageState.selectedStage <= stageState.highestClearedStage;
@@ -46,7 +52,9 @@ public class MainStageSystem : MonoBehaviour
         BattleSystem battleSystem,
         BattleState battleState,
         EnemyData enemyData,
-        MainStageState stageState)
+        MainStageState stageState,
+        UltimateSystem ultimateSystem,
+        EquipmentSystem equipmentSystem)
     {
         this.playerData = playerData;
         this.inventorySystem = inventorySystem;
@@ -54,6 +62,8 @@ public class MainStageSystem : MonoBehaviour
         this.battleState = battleState;
         this.enemyData = enemyData;
         this.stageState = stageState;
+        this.ultimateSystem = ultimateSystem;
+        this.equipmentSystem = equipmentSystem;
 
         this.stageState.Normalize();
 
@@ -93,6 +103,9 @@ public class MainStageSystem : MonoBehaviour
 
         stageState.selectedStage = stageNumber;
         ConfigureEnemy(stageNumber);
+        LastFeedback = IsSelectedStageCleared
+            ? $"Stage {stageNumber} cleared. Replay or sweep available."
+            : $"Stage {stageNumber} ready for first clear.";
         return true;
     }
 
@@ -106,6 +119,7 @@ public class MainStageSystem : MonoBehaviour
         activeStage = stageState.selectedStage;
         ConfigureEnemy(activeStage);
         SpendStamina();
+        LastFeedback = $"Stage {activeStage} battle in progress.";
 
         if (!battleSystem.StartBattle())
         {
@@ -155,7 +169,7 @@ public class MainStageSystem : MonoBehaviour
 
         if (stageNumber < 1 || stageNumber > stageState.highestClearedStage)
         {
-            Debug.Log("Only cleared stages can be swept.");
+            SetFeedback("Only cleared stages can be swept.");
             return false;
         }
 
@@ -167,6 +181,7 @@ public class MainStageSystem : MonoBehaviour
         SpendStamina();
         RewardBundle reward = GetNormalReward(stageNumber);
         GrantReward(reward, $"Stage {stageNumber} sweep");
+        LastFeedback = $"Sweep complete: {FormatReward(reward)}";
         return true;
     }
 
@@ -186,6 +201,11 @@ public class MainStageSystem : MonoBehaviour
 
         if (result != BattleResult.Victory || completedStage <= 0)
         {
+            if (result == BattleResult.Defeat && completedStage > 0)
+            {
+                LastFeedback =
+                    $"Stage {completedStage} defeated. No rewards received.";
+            }
             return;
         }
 
@@ -200,6 +220,12 @@ public class MainStageSystem : MonoBehaviour
                 completedStage + 1
             );
             totalReward.Add(GetFirstClearReward(completedStage));
+            string unlockedUltimate = GetUltimateUnlockForStage(completedStage);
+            if (!string.IsNullOrEmpty(unlockedUltimate))
+                ultimateSystem?.Unlock(unlockedUltimate);
+            string equipmentDrop = GetEquipmentUnlockForStage(completedStage);
+            if (!string.IsNullOrEmpty(equipmentDrop))
+                equipmentSystem?.Unlock(equipmentDrop);
 
             if (stageState.highestUnlockedStage > completedStage)
             {
@@ -213,6 +239,23 @@ public class MainStageSystem : MonoBehaviour
                 ? $"Stage {completedStage} first clear"
                 : $"Stage {completedStage} clear"
         );
+
+        LastFeedback = firstClear
+            ? $"First clear! {FormatReward(totalReward)} " +
+              GetUltimateUnlockFeedback(completedStage) +
+              GetEquipmentUnlockFeedback(completedStage) +
+              (completedStage < TotalStages
+                  ? $"Stage {completedStage + 1} unlocked."
+                  : "All prototype stages cleared!")
+            : $"Victory! {FormatReward(totalReward)}";
+
+        if (IsPrototypeComplete)
+        {
+            stageState.selectedStage = TotalStages;
+            LastFeedback =
+                $"Main Story Prototype Complete! Stage {TotalStages} remains " +
+                $"available for replay and sweep. {FormatReward(totalReward)}";
+        }
     }
 
     private bool CanSpendStamina()
@@ -226,7 +269,9 @@ public class MainStageSystem : MonoBehaviour
 
         if (stageState.battleStamina < StaminaCostPerBattle)
         {
-            Debug.Log("Not enough battle stamina.");
+            SetFeedback(
+                $"Not enough stamina. Next point in {SecondsUntilNextStamina}s."
+            );
             return false;
         }
 
@@ -303,13 +348,16 @@ public class MainStageSystem : MonoBehaviour
 
         int stageIndex = Math.Max(0, stageNumber - 1);
 
-        enemyData.enemyName = $"Stage {stageNumber} Shade";
+        enemyData.traits = GetEnemyTraits(stageNumber);
+        enemyData.enemyName =
+            $"Stage {stageNumber} {EnemyTraitUtility.GetDisplayName(enemyData.traits)} Shade";
         enemyData.maxHP = ScaleStat(60f, 1.18f, stageIndex);
         enemyData.attack = ScaleStat(8f, 1.12f, stageIndex);
         enemyData.defense = ScaleStat(2f, 1.10f, stageIndex);
         enemyData.agility = 4 + stageIndex / 5;
         enemyData.wisdom = 5 + stageIndex / 5;
-        enemyData.equippedUltimate = UltimateData.CreateStarBurst();
+        ApplyEnemyTraits(enemyData);
+        enemyData.equippedUltimate = UltimateData.GetById(GetEnemyUltimateId(stageNumber));
 
         if (battleState != null && !battleState.battleRunning)
         {
@@ -325,14 +373,14 @@ public class MainStageSystem : MonoBehaviour
         );
     }
 
-    private RewardBundle GetNormalReward(int stageNumber)
+    public RewardBundle GetNormalReward(int stageNumber)
     {
         return new RewardBundle(
             energy: 10 + 3 * Math.Max(0, stageNumber - 1)
         );
     }
 
-    private RewardBundle GetFirstClearReward(int stageNumber)
+    public RewardBundle GetFirstClearReward(int stageNumber)
     {
         RewardBundle reward = new RewardBundle(
             energy: 50 + 10 * Math.Max(0, stageNumber - 1)
@@ -361,6 +409,79 @@ public class MainStageSystem : MonoBehaviour
         return reward;
     }
 
+    public string GetUltimateUnlockForStage(int stageNumber)
+    {
+        switch (stageNumber)
+        {
+            case 5: return "iron_retaliation";
+            case 10: return "rapid_nova";
+            case 15: return "meteor_flurry";
+            case 20: return "swift_ascension";
+            default: return string.Empty;
+        }
+    }
+
+    public string GetEnemyUltimateId(int stageNumber)
+    {
+        if (stageNumber >= 20) return "swift_ascension";
+        if (stageNumber >= 15) return "meteor_flurry";
+        if (stageNumber >= 10) return "rapid_nova";
+        if (stageNumber >= 5) return "iron_retaliation";
+        return "star_burst";
+    }
+
+    public string GetEquipmentUnlockForStage(int stageNumber)
+    {
+        return EquipmentSystem.GetStageEquipmentId(stageNumber);
+    }
+
+    private string GetEquipmentUnlockFeedback(int stageNumber)
+    {
+        EquipmentData item = EquipmentData.GetById(
+            GetEquipmentUnlockForStage(stageNumber)
+        );
+        return item == null ? string.Empty : $"Obtained {item.itemName}! ";
+    }
+
+    public EnemyTrait GetEnemyTraits(int stageNumber)
+    {
+        switch (stageNumber)
+        {
+            case 5: return EnemyTrait.Frenzy | EnemyTrait.Bulwark;
+            case 10: return EnemyTrait.Swift | EnemyTrait.Sage;
+            case 15: return EnemyTrait.Frenzy | EnemyTrait.Swift;
+            case 20: return EnemyTrait.Bulwark | EnemyTrait.Sage;
+        }
+
+        switch ((stageNumber - 1) % 4)
+        {
+            case 1: return EnemyTrait.Frenzy;
+            case 2: return EnemyTrait.Bulwark;
+            case 3: return EnemyTrait.Swift;
+            default: return stageNumber >= 6 ? EnemyTrait.Sage : EnemyTrait.None;
+        }
+    }
+
+    private void ApplyEnemyTraits(EnemyData enemy)
+    {
+        if ((enemy.traits & EnemyTrait.Frenzy) != 0)
+            enemy.attack = Mathf.Max(1, Mathf.CeilToInt(enemy.attack * 1.15f));
+        if ((enemy.traits & EnemyTrait.Bulwark) != 0)
+            enemy.defense = Mathf.Max(1, Mathf.CeilToInt(enemy.defense * 1.25f));
+        if ((enemy.traits & EnemyTrait.Swift) != 0)
+            enemy.agility = Mathf.Max(1, Mathf.CeilToInt(enemy.agility * 1.25f));
+        if ((enemy.traits & EnemyTrait.Sage) != 0)
+            enemy.wisdom = Mathf.Max(1, Mathf.CeilToInt(enemy.wisdom * 1.30f));
+    }
+
+    private string GetUltimateUnlockFeedback(int stageNumber)
+    {
+        string id = GetUltimateUnlockForStage(stageNumber);
+        return string.IsNullOrEmpty(id)
+            ? string.Empty
+            : $"Unlocked {UltimateData.GetById(id).ultimateName}! ";
+    }
+
     private void GrantReward(RewardBundle reward, string source)
     {
         if (reward == null || playerData == null) return;
@@ -379,5 +500,23 @@ public class MainStageSystem : MonoBehaviour
             $"{source} reward: +{reward.energy} Energy, " +
             $"+{reward.memoryFragments} Memory Fragments, +{reward.runes} Runes."
         );
+    }
+
+    private void SetFeedback(string message)
+    {
+        LastFeedback = message;
+        Debug.Log(message);
+    }
+
+    private string FormatReward(RewardBundle reward)
+    {
+        if (reward == null) return "No reward.";
+
+        string result = $"+{reward.energy} Energy";
+        if (reward.memoryFragments > 0)
+            result += $", +{reward.memoryFragments} Memory Fragments";
+        if (reward.runes > 0)
+            result += $", +{reward.runes} Runes";
+        return result + ".";
     }
 }
