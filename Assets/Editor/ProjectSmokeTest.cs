@@ -86,6 +86,14 @@ public static class ProjectSmokeTest
             );
             UltimateSystem ultimates = gameManager.UltimateSystemRef;
             EquipmentSystem equipment = gameManager.EquipmentSystemRef;
+            MeditationSystem meditation = UnityEngine.Object.FindFirstObjectByType<MeditationSystem>(
+                FindObjectsInactive.Include);
+            CollectionSystem collection = UnityEngine.Object.FindFirstObjectByType<CollectionSystem>(
+                FindObjectsInactive.Include);
+            GameFeedbackUI feedback = UnityEngine.Object.FindFirstObjectByType<GameFeedbackUI>(
+                FindObjectsInactive.Include);
+            EditBuildUI editBuild = UnityEngine.Object.FindFirstObjectByType<EditBuildUI>(
+                FindObjectsInactive.Include);
 
             Require(stages != null, "MainStageSystem was not initialized.");
             Require(stageState != null, "MainStageState was not initialized.");
@@ -94,6 +102,54 @@ public static class ProjectSmokeTest
             Require(panels != null, "PanelSwitcher was not found.");
             Require(ultimates != null, "UltimateSystem was not initialized.");
             Require(equipment != null, "EquipmentSystem was not initialized.");
+            Require(meditation != null && collection != null && feedback != null,
+                "Unified action feedback was not initialized.");
+            Require(editBuild != null, "Edit Build UI was not initialized.");
+
+            meditation.StartMeditation();
+            Require(feedback.IsToastVisible && feedback.CurrentToast.Contains("EXP"),
+                "Meditation did not show gain feedback.");
+            collection.CollectOnce();
+            Require(feedback.IsToastVisible && feedback.CurrentToast.Contains("Energy"),
+                "Collection did not show gain feedback.");
+            Require(feedback.ActiveToastCount == 2,
+                "Consecutive gain messages replaced each other instead of stacking.");
+            RectTransform toastTemplate = FindGameObject("FeedbackToast").GetComponent<RectTransform>();
+            Require(toastTemplate.sizeDelta == new Vector2(380f, 34f),
+                "Gain feedback did not preserve width while reducing vertical height.");
+            var toastInstances = new System.Collections.Generic.List<RectTransform>();
+            foreach (GameObject candidate in Resources.FindObjectsOfTypeAll<GameObject>())
+                if (candidate.name == "FeedbackToastInstance" && candidate.scene.IsValid())
+                    toastInstances.Add(candidate.GetComponent<RectTransform>());
+            float toastOriginY = FindGameObject("FeedbackToast")
+                .GetComponent<RectTransform>().anchoredPosition.y;
+            Require(toastInstances.Count == 2 &&
+                toastInstances.TrueForAll(rect => rect.anchoredPosition.y >= toastOriginY),
+                "New gain feedback spawned progressively lower on the screen.");
+
+            GameObject editBuildNav = FindGameObject("GoToEditBuildButton");
+            Require(editBuildNav != null && editBuildNav.activeSelf,
+                "The unified Edit Build navigation button was missing.");
+            editBuildNav.GetComponent<UnityEngine.UI.Button>().onClick.Invoke();
+            Require(editBuild.gameObject.activeSelf,
+                "Edit Build page did not open.");
+            editBuild.ShowUltimatePage();
+            Require(FindGameObject("EditUltimatePage").activeSelf,
+                "Edit Build Ultimate tab did not open.");
+            editBuild.ShowSummaryPage();
+            Require(FindGameObject("EditSummaryPage").activeSelf,
+                "Edit Build My Build tab did not open.");
+            panels.ShowMeditationPanel();
+
+            GameObject timeline = FindGameObject("SharedActionTimeline");
+            GameObject playerMarker = FindGameObject("PlayerTimelineMarker");
+            GameObject enemyMarker = FindGameObject("EnemyTimelineMarker");
+            Require(timeline != null && !timeline.activeSelf &&
+                playerMarker != null && enemyMarker != null,
+                "Battle preview did not hide the Shared Action Timeline.");
+            Require(!FindGameObject("PlayerActionSlider").activeSelf &&
+                !FindGameObject("EnemyActionSlider").activeSelf,
+                "Legacy separate Action sliders remained visible.");
             Require(equipment.OwnedCount == 0,
                 "A new character incorrectly started with all prototype equipment.");
             Require(stages.GetEnemyUltimateId(1) == "star_burst" &&
@@ -120,6 +176,42 @@ public static class ProjectSmokeTest
             Require(stageState.battleStamina == MainStageSystem.MaxStamina,
                 "New game stamina was not full.");
 
+            RectTransform meditateRect = FindGameObject("MeditateButton")
+                ?.GetComponent<RectTransform>();
+            RectTransform expSliderRect = FindGameObject("ExpSlider")
+                ?.GetComponent<RectTransform>();
+            RectTransform autoRect = FindGameObject("AutoMeditateButton")
+                ?.GetComponent<RectTransform>();
+            Require(meditateRect != null && expSliderRect != null && autoRect != null,
+                "Meditation controls were not found.");
+            Require(meditateRect.localScale == Vector3.one &&
+                expSliderRect.localScale == Vector3.one,
+                "Meditation controls retained legacy local scaling.");
+            Require(meditateRect.sizeDelta.x == meditateRect.sizeDelta.y &&
+                meditateRect.sizeDelta.x == 140f,
+                "Meditate button was not restored to a circular square layout.");
+            Require(expSliderRect.sizeDelta == new Vector2(320f, 22f),
+                "EXP Slider did not use the portrait layout size.");
+            Require(Mathf.Abs(expSliderRect.anchoredPosition.y -
+                autoRect.anchoredPosition.y) > 50f,
+                "EXP Slider overlaps the Auto Meditation button.");
+            UnityEngine.UI.Text meditateLabel =
+                meditateRect.GetComponentInChildren<UnityEngine.UI.Text>(true);
+            Require(meditateLabel != null && meditateLabel.text == "Meditate",
+                "Meditate button label was missing.");
+            MeditationUI meditationView =
+                UnityEngine.Object.FindFirstObjectByType<MeditationUI>(
+                    FindObjectsInactive.Include
+                );
+            Require(meditationView != null, "MeditationUI was not found.");
+            foreach (TMPro.TMP_Text text in
+                meditationView.GetComponentsInChildren<TMPro.TMP_Text>(true))
+            {
+                if (text.name == "LevelText" || text.name == "ExpText")
+                    Require(text.font == TMPro.TMP_Settings.defaultFontAsset,
+                        $"{text.name} did not use the default English TMP font.");
+            }
+
             PlayerData player = gameManager.PlayerDataRef;
             player.energy = 100;
             int originalWeaponLevel = player.weaponLevel;
@@ -132,10 +224,76 @@ public static class ProjectSmokeTest
             player.level = 2;
             Require(upgrades.TryUpgradePart(BodyPartType.Weapon),
                 "Weapon did not upgrade after Player Level increased.");
+            Require(feedback.CurrentToast.Contains("Weapon upgraded"),
+                "Successful Upgrade did not use unified action feedback.");
+            gameManager.RefreshAllUI();
+            RectTransform weaponRow = FindGameObject("WeaponRow").GetComponent<RectTransform>();
+            RectTransform headRow = FindGameObject("HeadRow").GetComponent<RectTransform>();
+            RectTransform armsRow = FindGameObject("ArmsRow").GetComponent<RectTransform>();
+            Require(weaponRow.anchoredPosition.y == headRow.anchoredPosition.y &&
+                weaponRow.anchoredPosition.x < headRow.anchoredPosition.x &&
+                armsRow.anchoredPosition.y < weaponRow.anchoredPosition.y,
+                "Upgrade parts were not arranged Weapon/Head first in a two-column grid.");
+            foreach (TMPro.TMP_Text text in weaponRow.GetComponentsInChildren<TMPro.TMP_Text>(true))
+                if (text.name == "BodyLevelText")
+                    Require(text.textWrappingMode == TMPro.TextWrappingModes.NoWrap,
+                        "Upgrade progression text still allowed mid-word wrapping.");
+            bool weaponProgressVisible = false;
+            foreach (TMPro.TMP_Text text in weaponRow.GetComponentsInChildren<TMPro.TMP_Text>(true))
+                if (text.text.Contains("Attack") && text.text.Contains("→"))
+                    weaponProgressVisible = true;
+            Require(weaponProgressVisible,
+                "Weapon upgrade card did not show current-to-next stat progression.");
+            TMPro.TMP_Text weaponCost = FindGameObject("WeaponRow")
+                .GetComponent<UpgradeRowUI>()
+                .GetComponentInChildren<UnityEngine.UI.Button>(true)
+                .GetComponentInChildren<TMPro.TMP_Text>(true);
+            Require(weaponCost != null && !weaponCost.text.Contains("Upgrade"),
+                "Upgrade button still used a generic Upgrade label.");
 
             panels.ShowBattlePanel();
+            gameManager.RefreshAllUI();
+            GameObject saveButton = FindGameObject("SaveButton");
+            GameObject loadButton = FindGameObject("LoadButton");
+            Require(saveButton != null && loadButton != null &&
+                !saveButton.activeSelf && !loadButton.activeSelf,
+                "Save/Load remained visible on the Battle page before combat.");
             int energyBeforeBattle = player.energy;
             Require(stages.TryStartSelectedStage(), "Stage 1 did not start.");
+            gameManager.RefreshAllUI();
+            Require(timeline.activeSelf &&
+                FindGameObject("PlayerHPSlider").activeSelf &&
+                !FindGameObject("StartBattleButton").activeSelf,
+                "Starting battle did not switch from preview to combat HUD.");
+            Require(FindGameObject("PlayerNameText").GetComponent<RectTransform>().anchoredPosition.x < 0f &&
+                FindGameObject("EnemyNameText").GetComponent<RectTransform>().anchoredPosition.x > 0f &&
+                timeline.GetComponent<RectTransform>().anchoredPosition.y < -250f,
+                "Combat HUD was not arranged player-left/enemy-right with a low timeline.");
+            GameObject logToggle = FindGameObject("CombatLogToggleButton");
+            GameObject logPanel = FindGameObject("CombatLogPanel");
+            Require(logToggle.activeSelf && !logPanel.activeSelf &&
+                !FindGameObject("BattleStatusText").activeSelf &&
+                !FindGameObject("StageFeedbackText").activeSelf,
+                "Combat status/log remained exposed instead of using the collapsed log.");
+            logToggle.GetComponent<UnityEngine.UI.Button>().onClick.Invoke();
+            Require(logPanel.activeSelf &&
+                FindGameObject("CombatLogText").GetComponent<TMPro.TMP_Text>().text.Length > 0,
+                "Combat Log did not expand with battle details.");
+            logToggle.GetComponent<UnityEngine.UI.Button>().onClick.Invoke();
+            Require(!logPanel.activeSelf, "Combat Log did not collapse.");
+            Require(saveButton != null && loadButton != null &&
+                !saveButton.activeSelf && !loadButton.activeSelf,
+                "Save/Load remained visible during battle.");
+            battle.BattleState.playerActionValue = 25f;
+            battle.BattleState.enemyActionValue = 75f;
+            gameManager.RefreshAllUI();
+            Require(Mathf.Approximately(
+                    playerMarker.GetComponent<RectTransform>().anchorMin.x, 0.25f) &&
+                Mathf.Approximately(
+                    enemyMarker.GetComponent<RectTransform>().anchorMin.x, 0.75f),
+                "Shared Action Timeline markers did not reflect combat progress.");
+            battle.BattleState.playerActionValue = 0f;
+            battle.BattleState.enemyActionValue = 0f;
 
             panels.ShowMeditationPanel();
             GameObject battlePanel = FindGameObject("BattlePanel");
@@ -146,6 +304,21 @@ public static class ProjectSmokeTest
                 "Meditation panel opened during battle.");
 
             RunBattleToCompletion(battle);
+            gameManager.RefreshAllUI();
+            Require(feedback.IsResultVisible &&
+                feedback.CurrentResult.Contains("Stage 1 cleared") &&
+                feedback.CurrentResult.Contains("Star Blade"),
+                "Battle result panel omitted first-clear reward feedback.");
+            FindGameObject("BattleResultContinueButton")
+                .GetComponent<UnityEngine.UI.Button>().onClick.Invoke();
+            Require(!feedback.IsResultVisible,
+                "Battle result panel did not close.");
+            Require(!saveButton.activeSelf && !loadButton.activeSelf,
+                "Save/Load appeared while the Battle page remained open.");
+            panels.ShowMeditationPanel();
+            gameManager.RefreshAllUI();
+            Require(saveButton.activeSelf && loadButton.activeSelf,
+                "Save/Load did not return after leaving the Battle page.");
 
             Require(battle.BattleState.battleResult == BattleResult.Victory,
                 "Stage 1 did not end in Victory.");
@@ -159,17 +332,58 @@ public static class ProjectSmokeTest
                 "Stage challenge did not consume exactly 1 stamina.");
             Require(player.energy == energyBeforeBattle + 60,
                 "Stage 1 normal + first-clear Energy reward was incorrect.");
-            Require(equipment.IsOwned("star_blade") && equipment.OwnedCount == 1,
-                "Stage 1 first clear did not unlock Star Blade exactly once.");
+            Require(equipment.IsOwned("star_blade") &&
+                equipment.OwnedCount >= 1 && equipment.OwnedCount <= 2,
+                "Stage 1 first clear did not grant its fixed equipment correctly.");
 
             int energyBeforeSweep = player.energy;
+            int equipmentBeforeSweep = equipment.OwnedCount;
             Require(stages.TrySweepStage(1), "Cleared Stage 1 could not be swept.");
             Require(stageState.battleStamina == 18,
                 "Sweep did not consume exactly 1 stamina.");
             Require(player.energy == energyBeforeSweep + 10,
                 "Stage 1 sweep reward was incorrect.");
-            Require(equipment.OwnedCount == 1,
-                "Sweep incorrectly granted duplicate or additional equipment.");
+            Require(feedback.IsToastVisible && feedback.CurrentToast.Contains("Sweep"),
+                "Sweep did not show reward feedback.");
+            Require(equipment.OwnedCount >= equipmentBeforeSweep &&
+                equipment.OwnedCount <= equipmentBeforeSweep + 1,
+                "Sweep equipment drop count exceeded its single-drop rule.");
+
+            string deterministicDrop = stages.RollEquipmentDrop(
+                5, MainStageSystem.BattleEquipmentDropChance, 0.199f);
+            Require(!string.IsNullOrEmpty(deterministicDrop) &&
+                deterministicDrop == EquipmentSystem.GetStageEquipmentId(5) &&
+                string.IsNullOrEmpty(stages.RollEquipmentDrop(
+                    5, MainStageSystem.BattleEquipmentDropChance, 0.2f)),
+                "Equipment drop chance or current-and-earlier-stage pool was incorrect.");
+            RewardBundle multiEquipmentReward = new RewardBundle();
+            multiEquipmentReward.AddEquipment("star_blade");
+            multiEquipmentReward.AddEquipment("seer_circlet");
+            Require(multiEquipmentReward.equipmentTemplateIds.Length == 2,
+                "A reward could not contain fixed and random equipment together.");
+
+            DailyChallengeSystem daily = gameManager.DailyChallengeSystemRef;
+            Require(daily != null && daily.State.remainingAttempts == 3,
+                "Daily Challenge did not initialize with three attempts.");
+            panels.ShowBattleModePanel();
+            Require(FindGameObject("BattleModePanel").activeSelf,
+                "Battle navigation did not open the Battle Mode Hub.");
+            panels.ShowDailyChallengePanel();
+            gameManager.RefreshAllUI();
+            Require(FindGameObject("DailyChallengePanel").activeSelf &&
+                FindGameObject("DailyAttempts").GetComponent<TMPro.TMP_Text>().text.Contains("3/3"),
+                "Daily Challenge preview did not show today's attempts.");
+            Require(daily.TryStart(), "Daily Challenge did not start.");
+            panels.ShowBattlePanel();
+            RunBattleToCompletion(battle);
+            gameManager.RefreshAllUI();
+            Require(daily.State.remainingAttempts == 2,
+                "Daily Challenge did not consume exactly one attempt.");
+            Require(FindGameObject("DailyChallengePanel").activeSelf && feedback.IsResultVisible,
+                "Daily Challenge did not return to its preview with a result panel.");
+            FindGameObject("BattleResultContinueButton")
+                .GetComponent<UnityEngine.UI.Button>().onClick.Invoke();
+            stages.RefreshAfterLoad();
 
             var mappedDrops = new System.Collections.Generic.HashSet<string>();
             for (int stage = 1; stage <= 10; stage++)
@@ -311,6 +525,47 @@ public static class ProjectSmokeTest
     {
         foreach (EquipmentData item in EquipmentData.GetAll())
             if (!equipment.IsOwned(item.id)) equipment.Unlock(item.id);
+
+        int countAfterCatalog = equipment.OwnedCount;
+        EquipmentInstance duplicate = equipment.GrantInstance("star_blade");
+        Require(duplicate != null && equipment.OwnedCount == countAfterCatalog + 1 &&
+            equipment.GetInstancesForSlot(EquipmentSlot.Weapon).Count >= 3,
+            "Duplicate equipment was not stored as an independent instance.");
+        Require(equipment.ToggleLock(duplicate.instanceId) && duplicate.locked,
+            "Equipment instance lock state did not change.");
+        Require(equipment.EquipInstance(EquipmentSlot.Weapon, duplicate.instanceId),
+            "A specific equipment instance could not be equipped.");
+        Require(equipment.ToggleLock(duplicate.instanceId) && !duplicate.locked,
+            "Equipment instance could not be unlocked.");
+        Require(!equipment.TryDismantle(duplicate.instanceId),
+            "Equipped equipment was dismantled.");
+
+        InventorySystem inventory = UnityEngine.Object.FindFirstObjectByType<InventorySystem>(
+            FindObjectsInactive.Include);
+        Require(inventory != null, "InventorySystem was not initialized.");
+        EquipmentInstance disposable = equipment.GrantInstance("star_blade");
+        Require(equipment.ToggleLock(disposable.instanceId) &&
+            !equipment.TryDismantle(disposable.instanceId),
+            "Locked equipment was dismantled.");
+        Require(equipment.ToggleLock(disposable.instanceId),
+            "Disposable equipment could not be unlocked.");
+        int countBeforeDismantle = equipment.OwnedCount;
+        int dustBeforeDismantle = inventory.StarDust;
+        Require(equipment.TryDismantle(disposable.instanceId) &&
+            equipment.OwnedCount == countBeforeDismantle - 1 &&
+            inventory.StarDust == dustBeforeDismantle + EquipmentSystem.DismantleStarDustReward,
+            "Equipment dismantling did not remove one instance and grant Star Dust.");
+        gameManager.PlayerDataRef.energy += 1000;
+        int energyBeforeEnhance = gameManager.PlayerDataRef.energy;
+        int dustBeforeEnhance = inventory.StarDust;
+        Require(equipment.GetUpgradeCost(duplicate) == 50 &&
+            equipment.GetUpgradeStarDustCost(duplicate) == 5 &&
+            equipment.TryUpgrade(duplicate.instanceId) && duplicate.level == 2,
+            "Equipment Lv.1 to Lv.2 enhancement failed.");
+        Require(gameManager.PlayerDataRef.energy == energyBeforeEnhance - 50 &&
+            inventory.StarDust == dustBeforeEnhance - 5 &&
+            equipment.GetEffectiveStats(duplicate).attack == 8,
+            "Equipment enhancement cost or rounded effective stat was incorrect.");
 
         Require(!equipment.Equip(EquipmentSlot.Head, "star_blade"),
             "Weapon could be equipped in the Head slot.");

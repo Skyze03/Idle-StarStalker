@@ -1,7 +1,9 @@
+using System;
 using UnityEngine;
 
 public class MeditationSystem : MonoBehaviour
 {
+    public event Action<string> FeedbackRequested;
     private PlayerData playerData;
     private MeditationState meditationState;
     private InventorySystem inventorySystem;
@@ -40,7 +42,12 @@ public class MeditationSystem : MonoBehaviour
         }
         playerData.exp += totalExpGain;
         CheckLevelUp();
-        TryDropMemoryFragment();
+        bool fragmentDropped = TryDropMemoryFragment();
+
+        FeedbackRequested?.Invoke(
+            $"Meditation: +{totalExpGain} EXP" +
+            (fragmentDropped ? "  +1 Memory Fragment" : string.Empty)
+        );
 
         Debug.Log("Meditation once. Current EXP = " + playerData.exp);
     }
@@ -62,19 +69,22 @@ public class MeditationSystem : MonoBehaviour
         }
     }
 
-    private void TryDropMemoryFragment()
+    private bool TryDropMemoryFragment()
     {
         if (inventorySystem == null)
         {
-            return;
+            return false;
         }
 
-        float roll = Random.value;
+        float roll = UnityEngine.Random.value;
 
         if (roll <= memoryFragmentDropChance)
         {
             inventorySystem.AddMemoryFragment(1);
+            return true;
         }
+
+        return false;
     }
 
     public void ToggleAutoMeditation()

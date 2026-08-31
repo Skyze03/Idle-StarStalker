@@ -1,7 +1,9 @@
+using System;
 using UnityEngine;
 
 public class CombinerSystem : MonoBehaviour
 {
+    public event Action<string> FeedbackRequested;
     private InventoryData inventoryData;
     private BuffData buffData;
 
@@ -28,6 +30,7 @@ public class CombinerSystem : MonoBehaviour
         if (inventoryData.memoryFragmentCount < meditationBuffFragmentCost)
         {
             Debug.Log("Not enough Memory Fragments.");
+            FeedbackRequested?.Invoke("Not enough Memory Fragments");
             return false;
         }
 
@@ -35,6 +38,9 @@ public class CombinerSystem : MonoBehaviour
         buffData.meditationExpBonus = meditationBuffValue;
 
         Debug.Log("Meditation Buff created. EXP bonus = " + buffData.meditationExpBonus);
+        FeedbackRequested?.Invoke(
+            $"Meditation Buff created  EXP +{buffData.meditationExpBonus}"
+        );
         return true;
     }
 
@@ -49,6 +55,7 @@ public class CombinerSystem : MonoBehaviour
         if (inventoryData.runeCount < collectionBuffRuneCost)
         {
             Debug.Log("Not enough Runes.");
+            FeedbackRequested?.Invoke("Not enough Runes");
             return false;
         }
 
@@ -56,6 +63,9 @@ public class CombinerSystem : MonoBehaviour
         buffData.collectionEnergyBonus = collectionBuffValue;
 
         Debug.Log("Collection Buff created. Energy bonus = " + buffData.collectionEnergyBonus);
+        FeedbackRequested?.Invoke(
+            $"Collection Buff created  Energy +{buffData.collectionEnergyBonus}"
+        );
         return true;
     }
 }

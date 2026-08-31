@@ -18,10 +18,21 @@ public class BattleUI : MonoBehaviour
     [SerializeField] private Slider enemyActionSlider;
     [SerializeField] private Slider enemyRageSlider;
 
+    [Header("Shared Action Timeline")]
+    [SerializeField] private Slider sharedActionTimeline;
+    [SerializeField] private RectTransform playerTimelineMarker;
+    [SerializeField] private RectTransform enemyTimelineMarker;
+    [SerializeField] private GameObject sharedActionTimelineLabel;
+    [SerializeField] private GameObject playerRageLabel;
+    [SerializeField] private GameObject enemyRageLabel;
+
     [Header("Battle UI")]
     [SerializeField] private TMP_Text battleStatusText;
     [SerializeField] private Button startBattleButton;
     [SerializeField] private Button returnButton;
+    [SerializeField] private Button combatLogToggleButton;
+    [SerializeField] private GameObject combatLogPanel;
+    [SerializeField] private TMP_Text combatLogText;
 
     [Header("Main Stage UI")]
     [SerializeField] private TMP_Text selectedStageText;
@@ -44,6 +55,7 @@ public class BattleUI : MonoBehaviour
     private EnemyData enemyData;
     private PanelSwitcher panelSwitcher;
     private MainStageSystem mainStageSystem;
+    private bool combatLogExpanded;
 
     public void Setup(
         BattleSystem battleSystem,
@@ -71,6 +83,12 @@ public class BattleUI : MonoBehaviour
             returnButton.onClick.RemoveAllListeners();
             returnButton.onClick.AddListener(OnReturnClicked);
         }
+        if (combatLogToggleButton != null)
+        {
+            combatLogToggleButton.onClick.RemoveAllListeners();
+            combatLogToggleButton.onClick.AddListener(OnCombatLogToggleClicked);
+        }
+        combatLogExpanded = false;
 
         if (previousStageButton != null)
         {
@@ -179,6 +197,15 @@ public class BattleUI : MonoBehaviour
             enemyActionSlider.value = battleState.enemyActionValue;
         }
 
+        if (sharedActionTimeline != null)
+        {
+            sharedActionTimeline.minValue = 0f;
+            sharedActionTimeline.maxValue = BattleSystem.ActionThreshold;
+            sharedActionTimeline.value = BattleSystem.ActionThreshold;
+        }
+        PositionTimelineMarker(playerTimelineMarker, battleState.playerActionValue);
+        PositionTimelineMarker(enemyTimelineMarker, battleState.enemyActionValue);
+
         if (playerRageSlider != null)
         {
             playerRageSlider.minValue = 0f;
@@ -218,6 +245,9 @@ public class BattleUI : MonoBehaviour
             }
         }
 
+        if (combatLogText != null && battleSystem != null)
+            combatLogText.text = battleSystem.CombatLogText;
+
         if (startBattleButton != null)
         {
             startBattleButton.interactable = !battleState.battleRunning;
@@ -235,6 +265,92 @@ public class BattleUI : MonoBehaviour
             buildSummaryPanel.SetActive(false);
 
         RefreshMainStageUI();
+        RefreshPresentationMode();
+    }
+
+    private void RefreshPresentationMode()
+    {
+        bool combatVisible = battleState != null && battleState.battleRunning;
+
+        if (enemyNameText != null)
+        {
+            RectTransform enemyNameRect = enemyNameText.rectTransform;
+            enemyNameRect.anchoredPosition = combatVisible
+                ? new Vector2(105f, 250f)
+                : new Vector2(0f, 285f);
+            enemyNameRect.sizeDelta = combatVisible
+                ? new Vector2(190f, 42f)
+                : new Vector2(390f, 48f);
+            enemyNameText.fontSize = combatVisible ? 14f : 22f;
+            enemyNameText.textWrappingMode = TextWrappingModes.NoWrap;
+        }
+        if (playerNameText != null)
+        {
+            playerNameText.rectTransform.anchoredPosition = new Vector2(-105f, 250f);
+            playerNameText.rectTransform.sizeDelta = new Vector2(190f, 42f);
+            playerNameText.fontSize = 14f;
+            playerNameText.textWrappingMode = TextWrappingModes.NoWrap;
+        }
+
+        SetVisible(playerNameText, combatVisible);
+        SetVisible(playerHPText, combatVisible);
+        SetVisible(playerHPSlider, combatVisible);
+        SetVisible(playerRageSlider, combatVisible);
+        SetVisible(playerRageLabel, combatVisible);
+        SetVisible(enemyHPText, combatVisible);
+        SetVisible(enemyHPSlider, combatVisible);
+        SetVisible(enemyRageSlider, combatVisible);
+        SetVisible(enemyRageLabel, combatVisible);
+        SetVisible(sharedActionTimeline, combatVisible);
+        SetVisible(sharedActionTimelineLabel, combatVisible);
+        SetVisible(battleStatusText, false);
+        SetVisible(stageFeedbackText, false);
+        SetVisible(combatLogToggleButton, combatVisible);
+        SetVisible(combatLogPanel, combatVisible && combatLogExpanded);
+
+        SetVisible(selectedStageText, !combatVisible);
+        SetVisible(stageProgressText, !combatVisible);
+        SetVisible(battleStaminaText, !combatVisible);
+        SetVisible(previousStageButton, !combatVisible);
+        SetVisible(nextStageButton, !combatVisible);
+        SetVisible(enemyStatsText, !combatVisible);
+        SetVisible(rewardPreviewText, !combatVisible);
+        SetVisible(startBattleButton, !combatVisible);
+        SetVisible(sweepButton, !combatVisible);
+        SetVisible(buildSummaryButton, !combatVisible);
+        SetVisible(returnButton, !combatVisible);
+    }
+
+    private void OnCombatLogToggleClicked()
+    {
+        combatLogExpanded = !combatLogExpanded;
+        RefreshPresentationMode();
+        TMP_Text label = combatLogToggleButton != null
+            ? combatLogToggleButton.GetComponentInChildren<TMP_Text>(true)
+            : null;
+        if (label != null)
+            label.text = combatLogExpanded ? "Combat Log ▼" : "Combat Log ▲";
+    }
+
+    private static void SetVisible(Component component, bool visible)
+    {
+        if (component != null && component.gameObject.activeSelf != visible)
+            component.gameObject.SetActive(visible);
+    }
+
+    private static void SetVisible(GameObject gameObject, bool visible)
+    {
+        if (gameObject != null && gameObject.activeSelf != visible)
+            gameObject.SetActive(visible);
+    }
+
+    private static void PositionTimelineMarker(RectTransform marker, float actionValue)
+    {
+        if (marker == null) return;
+        float normalized = Mathf.Clamp01(actionValue / BattleSystem.ActionThreshold);
+        marker.anchorMin = new Vector2(normalized, marker.anchorMin.y);
+        marker.anchorMax = new Vector2(normalized, marker.anchorMax.y);
+        marker.anchoredPosition = new Vector2(0f, marker.anchoredPosition.y);
     }
 
     private void RefreshMainStageUI()
@@ -350,6 +466,7 @@ public class BattleUI : MonoBehaviour
             battleSystem.StartBattle();
         }
         if (buildSummaryPanel != null) buildSummaryPanel.SetActive(false);
+        combatLogExpanded = false;
         Refresh();
     }
 
@@ -413,9 +530,10 @@ public class BattleUI : MonoBehaviour
         foreach (EquipmentSlot slot in System.Enum.GetValues(typeof(EquipmentSlot)))
         {
             EquipmentData item = equipment?.GetEquipped(slot);
+            EquipmentInstance instance = equipment?.GetEquippedInstance(slot);
             equipmentLines += item == null
                 ? $"{slot}: None\n"
-                : $"{slot}: {item.itemName} — {item.description}\n";
+                : $"{slot}: {item.itemName} Lv.{instance?.level ?? 1} — {item.description}\n";
         }
 
         buildSummaryText.text =

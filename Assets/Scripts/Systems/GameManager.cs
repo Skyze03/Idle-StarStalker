@@ -29,6 +29,12 @@ public class GameManager : MonoBehaviour
     [SerializeField] private UltimateUI ultimateUI;
     [SerializeField] private EquipmentSystem equipmentSystem;
     [SerializeField] private EquipmentUI equipmentUI;
+    [SerializeField] private GameFeedbackUI gameFeedbackUI;
+    [SerializeField] private EditBuildUI editBuildUI;
+    [SerializeField] private DailyChallengeSystem dailyChallengeSystem;
+    [SerializeField] private DailyChallengeUI dailyChallengeUI;
+    [SerializeField] private BattleModeUI battleModeUI;
+    [SerializeField] private RewardPipeline rewardPipeline;
     private MeditationState meditationState;
     private InventoryData inventoryData;
     private BuffData buffData;
@@ -36,6 +42,7 @@ public class GameManager : MonoBehaviour
     private BattleState battleState;
     private EnemyData enemyData;
     private MainStageState mainStageState;
+    private DailyChallengeState dailyChallengeState;
     public PlayerData PlayerDataRef => playerData;
     public MeditationState MeditationStateRef => meditationState;
     public InventoryData InventoryDataRef => inventoryData;
@@ -47,6 +54,8 @@ public class GameManager : MonoBehaviour
     public MainStageSystem MainStageSystemRef => mainStageSystem;
     public UltimateSystem UltimateSystemRef => ultimateSystem;
     public EquipmentSystem EquipmentSystemRef => equipmentSystem;
+    public DailyChallengeState DailyChallengeStateRef => dailyChallengeState;
+    public DailyChallengeSystem DailyChallengeSystemRef => dailyChallengeSystem;
 
     private void Awake()
     {
@@ -72,6 +81,7 @@ public class GameManager : MonoBehaviour
 
         battleState = new BattleState();
         mainStageState = new MainStageState();
+        dailyChallengeState = new DailyChallengeState();
 
         enemyData = new EnemyData(
             "Training Shade",
@@ -88,12 +98,14 @@ public class GameManager : MonoBehaviour
         ultimateSystem.Setup(playerData, battleState);
         if (equipmentSystem == null)
             equipmentSystem = gameObject.AddComponent<EquipmentSystem>();
-        equipmentSystem.Setup(playerData, battleState);
 
         if (inventorySystem != null)
         {
             inventorySystem.Setup(inventoryData);
         }
+        equipmentSystem.Setup(playerData, battleState, inventorySystem);
+        if (rewardPipeline == null) rewardPipeline = gameObject.AddComponent<RewardPipeline>();
+        rewardPipeline.Setup(playerData, inventorySystem, equipmentSystem, ultimateSystem);
 
         if (combinerSystem != null)
         {
@@ -140,13 +152,18 @@ public class GameManager : MonoBehaviour
                 enemyData,
                 mainStageState,
                 ultimateSystem,
-                equipmentSystem
+                equipmentSystem,
+                rewardPipeline
             );
         }
         if (panelSwitcher != null)
         {
             panelSwitcher.Setup(battleState);
         }
+        if (dailyChallengeSystem == null)
+            dailyChallengeSystem = gameObject.AddComponent<DailyChallengeSystem>();
+        dailyChallengeSystem.Setup(dailyChallengeState, playerData, inventorySystem,
+            battleSystem, battleState, enemyData, panelSwitcher, rewardPipeline);
 
         if (meditationUI != null)
         {
@@ -194,10 +211,36 @@ public class GameManager : MonoBehaviour
             ultimateUI.Setup(ultimateSystem, playerData, panelSwitcher);
         if (equipmentUI != null)
             equipmentUI.Setup(equipmentSystem, panelSwitcher);
+        if (editBuildUI != null)
+            editBuildUI.Setup(equipmentSystem, ultimateSystem, playerData, battleSystem, panelSwitcher);
+        if (gameFeedbackUI != null)
+            gameFeedbackUI.Setup(
+                meditationSystem,
+                collectionSystem,
+                mainStageSystem,
+                upgradeSystem,
+                combinerSystem,
+                equipmentSystem,
+                ultimateSystem
+            );
+        if (gameFeedbackUI != null)
+        {
+            dailyChallengeSystem.ResultRequested -= gameFeedbackUI.ShowResult;
+            dailyChallengeSystem.ResultRequested += gameFeedbackUI.ShowResult;
+        }
+        if (battleModeUI != null) battleModeUI.Setup(panelSwitcher, mainStageSystem);
+        if (dailyChallengeUI != null)
+            dailyChallengeUI.Setup(dailyChallengeSystem, enemyData, panelSwitcher);
 
         if (saveLoadUI != null && saveSystem != null)
         {
-            saveLoadUI.Setup(saveSystem, this, battleState);
+            saveLoadUI.Setup(
+                saveSystem,
+                this,
+                battleState,
+                battleSystem,
+                battleUI != null ? battleUI.gameObject : null
+            );
         }
 
         Debug.Log("Game initialized.");
@@ -235,6 +278,8 @@ public class GameManager : MonoBehaviour
         if (battleUI != null) battleUI.Refresh();
         if (ultimateUI != null) ultimateUI.Refresh();
         if (equipmentUI != null) equipmentUI.Refresh();
+        if (editBuildUI != null) editBuildUI.Refresh();
+        if (dailyChallengeUI != null) dailyChallengeUI.Refresh();
         if (saveLoadUI != null) saveLoadUI.Refresh();
     }
 

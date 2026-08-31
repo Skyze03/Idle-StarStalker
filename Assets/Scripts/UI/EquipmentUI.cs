@@ -49,8 +49,10 @@ public class EquipmentUI : MonoBehaviour
 
         int hp = 0, attack = 0, defense = 0, agility = 0, wisdom = 0;
         float rageAttack = 0f, rageHit = 0f;
-        foreach (EquipmentData item in equipmentSystem.GetAllEquipped())
+        foreach (EquipmentSlot slot in System.Enum.GetValues(typeof(EquipmentSlot)))
         {
+            EquipmentStatBlock item = equipmentSystem.GetEffectiveStats(
+                equipmentSystem.GetEquippedInstance(slot));
             hp += item.hp; attack += item.attack; defense += item.defense;
             agility += item.agility; wisdom += item.wisdom;
             rageAttack += item.rageOnAttack; rageHit += item.rageOnHit;

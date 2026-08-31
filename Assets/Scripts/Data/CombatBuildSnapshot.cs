@@ -28,15 +28,12 @@ public class CombatBuildSnapshot
 
         if (equipmentSystem != null)
         {
-            foreach (EquipmentData item in equipmentSystem.GetAllEquipped())
+            foreach (EquipmentSlot slot in Enum.GetValues(typeof(EquipmentSlot)))
             {
-                snapshot.maxHP += item.hp;
-                snapshot.attack += item.attack;
-                snapshot.defense += item.defense;
-                snapshot.agility += item.agility;
-                snapshot.wisdom += item.wisdom;
-                snapshot.bonusRageOnAttack += item.rageOnAttack;
-                snapshot.bonusRageOnHit += item.rageOnHit;
+                EquipmentStatBlock item = equipmentSystem.GetEffectiveStats(equipmentSystem.GetEquippedInstance(slot));
+                snapshot.maxHP += item.hp; snapshot.attack += item.attack; snapshot.defense += item.defense;
+                snapshot.agility += item.agility; snapshot.wisdom += item.wisdom;
+                snapshot.bonusRageOnAttack += item.rageOnAttack; snapshot.bonusRageOnHit += item.rageOnHit;
             }
         }
         return snapshot;

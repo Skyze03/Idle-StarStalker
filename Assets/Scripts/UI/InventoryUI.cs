@@ -7,6 +7,7 @@ public class InventoryUI : MonoBehaviour
     [Header("UI References")]
     [SerializeField] private TextMeshProUGUI memoryFragmentText;
     [SerializeField] private TextMeshProUGUI runeText;
+    [SerializeField] private TextMeshProUGUI starDustText;
     [SerializeField] private Button goToMeditationFromInventoryButton;
 
     private InventoryData inventoryData;
@@ -41,6 +42,11 @@ public class InventoryUI : MonoBehaviour
         if (runeText != null)
         {
             runeText.text = "Runes: " + inventoryData.runeCount;
+        }
+
+        if (starDustText != null)
+        {
+            starDustText.text = "Star Dust: " + inventoryData.starDustCount;
         }
     }
 

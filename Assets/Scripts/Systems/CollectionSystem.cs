@@ -1,7 +1,9 @@
+using System;
 using UnityEngine;
 
 public class CollectionSystem : MonoBehaviour
 {
+    public event Action<string> FeedbackRequested;
     private PlayerData playerData;
     private InventorySystem inventorySystem;
     private BuffData buffData;
@@ -37,23 +39,31 @@ public class CollectionSystem : MonoBehaviour
         }
 
         playerData.energy += totalEnergyGain;
-        TryDropRune();
+        bool runeDropped = TryDropRune();
+
+        FeedbackRequested?.Invoke(
+            $"Collected: +{totalEnergyGain} Energy" +
+            (runeDropped ? "  +1 Rune" : string.Empty)
+        );
 
         Debug.Log("Collected once. Current Energy = " + playerData.energy);
     }
 
-    private void TryDropRune()
+    private bool TryDropRune()
     {
         if (inventorySystem == null)
         {
-            return;
+            return false;
         }
 
-        float roll = Random.value;
+        float roll = UnityEngine.Random.value;
 
         if (roll <= runeDropChance)
         {
             inventorySystem.AddRune(1);
+            return true;
         }
+
+        return false;
     }
 }

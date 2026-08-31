@@ -10,12 +10,29 @@ public class SaveLoadUI : MonoBehaviour
     private SaveSystem saveSystem;
     private GameManager gameManager;
     private BattleState battleState;
+    private BattleSystem battleSystem;
+    private GameObject battlePanel;
 
-    public void Setup(SaveSystem system, GameManager manager, BattleState state)
+    public void Setup(
+        SaveSystem system,
+        GameManager manager,
+        BattleState state,
+        BattleSystem battle,
+        GameObject battlePanelObject)
     {
         saveSystem = system;
         gameManager = manager;
         battleState = state;
+        battleSystem = battle;
+        battlePanel = battlePanelObject;
+
+        if (battleSystem != null)
+        {
+            battleSystem.BattleStarted -= OnBattleStarted;
+            battleSystem.BattleStarted += OnBattleStarted;
+            battleSystem.BattleEnded -= OnBattleEnded;
+            battleSystem.BattleEnded += OnBattleEnded;
+        }
 
         if (saveButton != null)
         {
@@ -30,11 +47,30 @@ public class SaveLoadUI : MonoBehaviour
         }
     }
 
+    private void OnDestroy()
+    {
+        if (battleSystem == null) return;
+        battleSystem.BattleStarted -= OnBattleStarted;
+        battleSystem.BattleEnded -= OnBattleEnded;
+    }
+
+    private void OnBattleStarted()
+    {
+        Refresh();
+    }
+
+    private void OnBattleEnded(BattleResult result)
+    {
+        Refresh();
+    }
+
     public void Refresh()
     {
-        bool locked = battleState != null && battleState.battleRunning;
-        if (saveButton != null) saveButton.interactable = !locked;
-        if (loadButton != null) loadButton.interactable = !locked;
+        bool battlePageVisible = battlePanel != null && battlePanel.activeInHierarchy;
+        bool locked = battlePageVisible ||
+            (battleState != null && battleState.battleRunning);
+        if (saveButton != null) saveButton.gameObject.SetActive(!locked);
+        if (loadButton != null) loadButton.gameObject.SetActive(!locked);
     }
 
     private void OnSaveClicked()
@@ -51,7 +87,8 @@ public class SaveLoadUI : MonoBehaviour
             gameManager.MeditationStateRef,
             gameManager.InventoryDataRef,
             gameManager.BuffDataRef,
-            gameManager.MainStageStateRef
+            gameManager.MainStageStateRef,
+            gameManager.DailyChallengeStateRef
         );
     }
 
@@ -69,7 +106,8 @@ public class SaveLoadUI : MonoBehaviour
             gameManager.MeditationStateRef,
             gameManager.InventoryDataRef,
             gameManager.BuffDataRef,
-            gameManager.MainStageStateRef
+            gameManager.MainStageStateRef,
+            gameManager.DailyChallengeStateRef
         );
 
         if (loaded)

@@ -42,7 +42,12 @@ public static class BattlePrototypeUISetup
 
         SetupUltimateUI(scene);
         SetupEquipmentUI(scene);
+        SetupInventoryResources(scene);
+        SetupEditBuildUI(scene);
+        SetupFeedbackUI(scene);
+        SetupBattleModes(scene);
         SetupBuildSummary(battlePanel, battleSerialized);
+        SetupCombatLog(hud, battleSerialized);
 
         TMP_Text selectedStageText = GetOrCreateText(
             hud, "SelectedStageText", "Stage 1", new Vector2(0f, 210f),
@@ -83,6 +88,22 @@ public static class BattlePrototypeUISetup
             new Color(1f, 0.25f, 0.2f, 1f)
         );
 
+        Slider sharedTimeline = GetOrCreateSlider(
+            hud, "SharedActionTimeline", new Vector2(0f, 125f),
+            new Color(0.35f, 0.42f, 0.58f, 1f)
+        );
+        RectTransform playerMarker = GetOrCreateTimelineMarker(
+            sharedTimeline.transform, "PlayerTimelineMarker", "P",
+            new Color(0.2f, 0.75f, 1f, 1f), -16f
+        );
+        RectTransform enemyMarker = GetOrCreateTimelineMarker(
+            sharedTimeline.transform, "EnemyTimelineMarker", "E",
+            new Color(1f, 0.35f, 0.3f, 1f), 16f
+        );
+        sharedTimeline.GetComponent<RectTransform>().sizeDelta = new Vector2(350f, 18f);
+        GetOrCreateText(hud, "SharedActionTimelineLabel", "ACTION TIMELINE",
+            new Vector2(0f, 153f), new Vector2(220f, 24f), 14f);
+
         GetOrCreateText(
             hud, "PlayerActionLabel", "Action", new Vector2(-180f, -52f),
             new Vector2(60f, 22f), 13f
@@ -95,6 +116,13 @@ public static class BattlePrototypeUISetup
             hud, "EnemyActionLabel", "Action", new Vector2(35f, -52f),
             new Vector2(60f, 22f), 13f
         );
+
+        playerAction.gameObject.SetActive(false);
+        enemyAction.gameObject.SetActive(false);
+        RectTransform playerActionLabel = FindChildByName(hud, "PlayerActionLabel");
+        RectTransform enemyActionLabel = FindChildByName(hud, "EnemyActionLabel");
+        if (playerActionLabel != null) playerActionLabel.gameObject.SetActive(false);
+        if (enemyActionLabel != null) enemyActionLabel.gameObject.SetActive(false);
         GetOrCreateText(
             hud, "EnemyRageLabel", "Rage", new Vector2(35f, -82f),
             new Vector2(60f, 22f), 13f
@@ -130,6 +158,15 @@ public static class BattlePrototypeUISetup
         Assign(battleSerialized, "playerRageSlider", playerRage);
         Assign(battleSerialized, "enemyActionSlider", enemyAction);
         Assign(battleSerialized, "enemyRageSlider", enemyRage);
+        Assign(battleSerialized, "sharedActionTimeline", sharedTimeline);
+        Assign(battleSerialized, "playerTimelineMarker", playerMarker);
+        Assign(battleSerialized, "enemyTimelineMarker", enemyMarker);
+        Assign(battleSerialized, "sharedActionTimelineLabel",
+            FindChildByName(hud, "SharedActionTimelineLabel")?.gameObject);
+        Assign(battleSerialized, "playerRageLabel",
+            FindChildByName(hud, "PlayerRageLabel")?.gameObject);
+        Assign(battleSerialized, "enemyRageLabel",
+            FindChildByName(hud, "EnemyRageLabel")?.gameObject);
         Assign(battleSerialized, "selectedStageText", selectedStageText);
         Assign(battleSerialized, "stageProgressText", stageProgressText);
         Assign(battleSerialized, "battleStaminaText", staminaText);
@@ -310,6 +347,7 @@ public static class BattlePrototypeUISetup
             "MeditationPanel", "CollectionPanel", "UpgradePanel",
             "InventoryPanel", "CombinerPanel", "StatsPanel", "BattlePanel",
             "UltimatePanel", "EquipmentPanel"
+            , "EditBuildPanel", "BattleModePanel", "DailyChallengePanel"
         };
 
         foreach (string panelName in panelNames)
@@ -345,17 +383,24 @@ public static class BattlePrototypeUISetup
         LayoutBattle(FindRectInScene(scene, "BattlePanel"));
         LayoutUltimate(FindRectInScene(scene, "UltimatePanel"));
         LayoutEquipment(FindRectInScene(scene, "EquipmentPanel"));
+        LayoutEditBuild(FindRectInScene(scene, "EditBuildPanel"));
+        LayoutBattleMode(FindRectInScene(scene, "BattleModePanel"));
+        LayoutDailyChallenge(FindRectInScene(scene, "DailyChallengePanel"));
 
         EditorUtility.SetDirty(safeArea);
     }
 
     private static void LayoutMeditation(RectTransform panel)
     {
-        Position(panel, "BodyLevelText", 0f, 300f, 360f, 52f);
-        Position(panel, "ExpText", 0f, 245f, 360f, 44f);
-        Position(panel, "EnergyText", 0f, 195f, 360f, 44f);
-        Position(panel, "MeditateButton", 0f, 105f, 260f, 56f);
-        Position(panel, "AutoMeditateButton", 0f, 35f, 260f, 56f);
+        Position(panel, "LevelText", 0f, 270f, 360f, 42f);
+        Position(panel, "ExpText", 0f, 225f, 360f, 38f);
+        Position(panel, "ExpSlider", 0f, 185f, 320f, 22f);
+        Position(panel, "MeditateButton", 0f, 95f, 140f, 140f);
+        Position(panel, "AutoMeditateButton", 0f, -20f, 260f, 58f);
+
+        NormalizeMeditationText(panel, "LevelText", 22f);
+        NormalizeMeditationText(panel, "ExpText", 18f);
+        NormalizeMeditateButton(panel);
 
         Position(panel, "GoToCollectionButton", -100f, -190f, 185f, 48f);
         Position(panel, "GoToUpgradeButton", 100f, -190f, 185f, 48f);
@@ -365,6 +410,7 @@ public static class BattlePrototypeUISetup
         Position(panel, "GoToBattleButton", 100f, -310f, 185f, 48f);
         Position(panel, "GoToUltimateButton", -100f, -370f, 185f, 48f);
         Position(panel, "GoToEquipmentButton", 100f, -370f, 185f, 48f);
+        Position(panel, "GoToEditBuildButton", 0f, -370f, 390f, 48f);
     }
 
     private static void LayoutCollection(RectTransform panel)
@@ -377,31 +423,72 @@ public static class BattlePrototypeUISetup
 
     private static void LayoutUpgrade(RectTransform panel)
     {
-        Position(panel, "BodyLevelText", 0f, 80f, 390f, 80f);
-        Position(panel, "UpgradeCostText", 0f, 0f, 390f, 80f);
-        Position(panel, "UpgradeButton", 0f, 0f, 390f, 80f);
-
-        string[] rows = { "HeadRow", "ArmsRow", "LegsRow", "ChestRow", "FeetRow", "WeaponRow" };
-        float[] y = { 240f, 145f, 50f, -45f, -140f, -235f };
+        string[] rows = { "WeaponRow", "HeadRow", "ArmsRow", "ChestRow", "LegsRow", "FeetRow" };
+        Vector2[] positions =
+        {
+            new Vector2(-102f, 225f), new Vector2(102f, 225f),
+            new Vector2(-102f, 25f), new Vector2(102f, 25f),
+            new Vector2(-102f, -175f), new Vector2(102f, -175f)
+        };
 
         for (int i = 0; i < rows.Length; i++)
         {
             RectTransform row = FindChildByName(panel, rows[i]);
             if (row == null) continue;
+            foreach (LayoutGroup layout in row.GetComponents<LayoutGroup>())
+                Object.DestroyImmediate(layout);
+            foreach (ContentSizeFitter fitter in row.GetComponents<ContentSizeFitter>())
+                Object.DestroyImmediate(fitter);
+            SetRect(row, positions[i].x, positions[i].y, 190f, 180f);
+            Position(row, "BodyLevelText", 0f, 28f, 182f, 100f);
+            Position(row, "UpgradeCostText", 0f, -28f, 170f, 30f);
+            Position(row, "UpgradeButton", 0f, -62f, 174f, 48f);
 
-            row.localScale = new Vector3(0.55f, 0.55f, 1f);
-            row.anchorMin = row.anchorMax = row.pivot = new Vector2(0.5f, 0.5f);
-            row.anchoredPosition = new Vector2(0f, y[i]);
+            RectTransform cost = FindChildByName(row, "UpgradeCostText");
+            if (cost != null) cost.gameObject.SetActive(false);
+            RectTransform level = FindChildByName(row, "BodyLevelText");
+            TMP_Text levelLabel = level != null ? level.GetComponent<TMP_Text>() : null;
+            if (levelLabel != null)
+            {
+                levelLabel.fontSize = 12f;
+                levelLabel.enableAutoSizing = false;
+                levelLabel.textWrappingMode = TextWrappingModes.NoWrap;
+                levelLabel.overflowMode = TextOverflowModes.Overflow;
+                levelLabel.alignment = TextAlignmentOptions.Center;
+            }
+            RectTransform buttonRect = FindChildByName(row, "UpgradeButton");
+            TMP_Text buttonLabel = buttonRect != null
+                ? buttonRect.GetComponentInChildren<TMP_Text>(true)
+                : null;
+            if (buttonLabel != null)
+            {
+                buttonLabel.fontSize = 12f;
+                buttonLabel.enableAutoSizing = false;
+                buttonLabel.alignment = TextAlignmentOptions.Center;
+            }
         }
 
-        Position(panel, "GoToMeditationFromUpgradeButton", 0f, -375f, 260f, 52f);
+        Position(panel, "GoToMeditationFromUpgradeButton", 0f, -385f, 220f, 46f);
     }
 
     private static void LayoutInventory(RectTransform panel)
     {
         Position(panel, "MemoryFragmentText", 0f, 220f, 360f, 60f);
         Position(panel, "RuneText", 0f, 150f, 360f, 60f);
+        Position(panel, "StarDustText", 0f, 80f, 360f, 60f);
         Position(panel, "GoToMeditationFromInventoryButton", 0f, -360f, 260f, 52f);
+    }
+
+    private static void SetupInventoryResources(Scene scene)
+    {
+        InventoryUI ui = FindComponentInScene<InventoryUI>(scene);
+        if (ui == null) return;
+        RectTransform panel = ui.GetComponent<RectTransform>();
+        TMP_Text starDust = GetOrCreateText(panel, "StarDustText", "Star Dust: 0",
+            new Vector2(0f, 80f), new Vector2(360f, 60f), 20f);
+        SerializedObject serialized = new SerializedObject(ui);
+        Assign(serialized, "starDustText", starDust);
+        serialized.ApplyModifiedPropertiesWithoutUndo();
     }
 
     private static void LayoutCombiner(RectTransform panel)
@@ -431,39 +518,308 @@ public static class BattlePrototypeUISetup
 
     private static void LayoutBattle(RectTransform panel)
     {
-        Position(panel, "SelectedStageText", 0f, 370f, 180f, 38f);
-        Position(panel, "PreviousStageButton", -145f, 370f, 54f, 44f);
-        Position(panel, "NextStageButton", 145f, 370f, 54f, 44f);
-        Position(panel, "StageProgressText", -105f, 335f, 205f, 30f);
-        Position(panel, "BattleStaminaText", 105f, 335f, 205f, 30f);
+        Position(panel, "ReturnButton", -170f, 385f, 72f, 40f);
+        SetButtonLabel(panel, "ReturnButton", "Back", 15f);
+        Position(panel, "SelectedStageText", 0f, 345f, 200f, 44f);
+        Position(panel, "PreviousStageButton", -125f, 345f, 52f, 42f);
+        Position(panel, "NextStageButton", 125f, 345f, 52f, 42f);
+        Position(panel, "StageProgressText", -105f, 300f, 205f, 34f);
+        Position(panel, "BattleStaminaText", 105f, 300f, 205f, 34f);
 
-        Position(panel, "EnemyNameText", 0f, 300f, 380f, 38f);
-        Position(panel, "EnemyStatsText", 0f, 262f, 400f, 50f);
-        Position(panel, "EnemyHPText", 0f, 222f, 300f, 26f);
-        Position(panel, "EnemyHPSlider", 0f, 201f, 310f, 16f);
-        Position(panel, "EnemyActionLabel", -155f, 175f, 70f, 20f);
-        Position(panel, "EnemyActionSlider", 35f, 175f, 290f, 16f);
-        Position(panel, "EnemyRageLabel", -155f, 149f, 70f, 20f);
-        Position(panel, "EnemyRageSlider", 35f, 149f, 290f, 16f);
+        Position(panel, "EnemyNameText", 0f, 285f, 390f, 48f);
+        Position(panel, "EnemyStatsText", 0f, 145f, 400f, 100f);
+        Position(panel, "EnemyHPText", 105f, 205f, 190f, 26f);
+        Position(panel, "EnemyHPSlider", 105f, 181f, 180f, 16f);
+        Position(panel, "EnemyRageLabel", 35f, 148f, 50f, 20f);
+        Position(panel, "EnemyRageSlider", 125f, 148f, 130f, 16f);
 
-        Position(panel, "RewardPreviewText", 0f, 108f, 400f, 50f);
-        Position(panel, "BattleStatusText", 0f, 70f, 300f, 34f);
-        Position(panel, "StageFeedbackText", 0f, 25f, 390f, 48f);
+        Position(panel, "RewardPreviewText", 0f, 35f, 400f, 90f);
+        Position(panel, "BattleStatusText", 0f, -235f, 300f, 34f);
+        Position(panel, "StageFeedbackText", 0f, -285f, 390f, 70f);
 
-        Position(panel, "PlayerNameText", 0f, -35f, 360f, 38f);
-        Position(panel, "PlayerHPText", 0f, -68f, 300f, 28f);
-        Position(panel, "PlayerHPSlider", 0f, -91f, 310f, 18f);
-        Position(panel, "PlayerActionLabel", -155f, -119f, 70f, 22f);
-        Position(panel, "PlayerActionSlider", 35f, -119f, 290f, 18f);
-        Position(panel, "PlayerRageLabel", -155f, -147f, 70f, 22f);
-        Position(panel, "PlayerRageSlider", 35f, -147f, 290f, 18f);
+        Position(panel, "PlayerNameText", -105f, 250f, 190f, 42f);
+        Position(panel, "PlayerHPText", -105f, 205f, 190f, 26f);
+        Position(panel, "PlayerHPSlider", -105f, 181f, 180f, 16f);
+        Position(panel, "PlayerRageLabel", -175f, 148f, 50f, 20f);
+        Position(panel, "PlayerRageSlider", -85f, 148f, 130f, 16f);
+        Position(panel, "SharedActionTimelineLabel", 0f, -260f, 220f, 20f);
+        Position(panel, "SharedActionTimeline", 0f, -292f, 350f, 18f);
 
-        Position(panel, "BuildSummaryButton", 0f, -250f, 220f, 46f);
-        Position(panel, "StartBattleButton", -95f, -315f, 170f, 52f);
-        Position(panel, "SweepButton", 95f, -315f, 170f, 52f);
-        Position(panel, "ReturnButton", 0f, -375f, 220f, 50f);
+        Position(panel, "BuildSummaryButton", 0f, -285f, 190f, 44f);
+        Position(panel, "StartBattleButton", -82f, -345f, 150f, 46f);
+        Position(panel, "SweepButton", 82f, -345f, 150f, 46f);
+        Position(panel, "CombatLogToggleButton", -125f, -385f, 160f, 38f);
+        Position(panel, "CombatLogPanel", 0f, -260f, 400f, 210f);
+
+        SetTextStyle(panel, "SelectedStageText", 26f, false);
+        SetTextStyle(panel, "StageProgressText", 17f, false);
+        SetTextStyle(panel, "BattleStaminaText", 17f, false);
+        SetTextStyle(panel, "EnemyNameText", 22f, false);
+        SetTextStyle(panel, "EnemyStatsText", 17f, false);
+        SetTextStyle(panel, "RewardPreviewText", 17f, false);
         Position(panel, "BuildSummaryText", 0f, 35f, 390f, 650f);
         Position(panel, "CloseBuildSummaryButton", 0f, -350f, 220f, 50f);
+    }
+
+    private static void LayoutEditBuild(RectTransform panel)
+    {
+        Position(panel, "EditBuildTitle", 0f, 385f, 390f, 42f);
+        Position(panel, "EquipmentTabButton", -130f, 335f, 120f, 42f);
+        Position(panel, "UltimateTabButton", 0f, 335f, 120f, 42f);
+        Position(panel, "SummaryTabButton", 130f, 335f, 120f, 42f);
+        Position(panel, "ReturnFromEditBuildButton", 0f, -395f, 220f, 46f);
+    }
+
+    private static void LayoutBattleMode(RectTransform panel) { }
+    private static void LayoutDailyChallenge(RectTransform panel) { }
+
+    private static void SetupBattleModes(Scene scene)
+    {
+        RectTransform battle = FindRectInScene(scene, "BattlePanel");
+        if (battle == null) return;
+        Transform parent = battle.parent;
+
+        RectTransform hub = FindRectInScene(scene, "BattleModePanel");
+        if (hub == null) { hub = CreateRect("BattleModePanel", parent); StretchToParent(hub); }
+        BattleModeUI hubUI = hub.GetComponent<BattleModeUI>();
+        if (hubUI == null) hubUI = hub.gameObject.AddComponent<BattleModeUI>();
+        GetOrCreateText(hub, "BattleModeTitle", "BATTLE MODES", new Vector2(0f, 330f), new Vector2(390f, 60f), 30f);
+        Button main = GetOrCreateButton(hub, "MainStoryModeButton", "Main Story\n20-stage progression", new Vector2(0f, 190f), new Vector2(360f, 100f));
+        Button daily = GetOrCreateButton(hub, "DailyModeButton", "Daily Challenge\n3 attempts per UTC day", new Vector2(0f, 60f), new Vector2(360f, 100f));
+        Button elite = GetOrCreateButton(hub, "EliteModeButton", "Elite Challenge", new Vector2(0f, -70f), new Vector2(360f, 100f));
+        TMP_Text eliteStatus = GetOrCreateText(hub, "EliteModeStatus", "Coming Soon", new Vector2(0f, -135f), new Vector2(300f, 30f), 15f);
+        Button hubReturn = GetOrCreateButton(hub, "ReturnFromBattleModes", "Back", new Vector2(0f, -360f), new Vector2(200f, 48f));
+        SerializedObject h = new SerializedObject(hubUI);
+        Assign(h, "mainStoryButton", main); Assign(h, "dailyButton", daily); Assign(h, "eliteButton", elite);
+        Assign(h, "returnButton", hubReturn); Assign(h, "eliteStatusText", eliteStatus); h.ApplyModifiedPropertiesWithoutUndo();
+
+        RectTransform dailyPanel = FindRectInScene(scene, "DailyChallengePanel");
+        if (dailyPanel == null) { dailyPanel = CreateRect("DailyChallengePanel", parent); StretchToParent(dailyPanel); }
+        DailyChallengeUI dailyUI = dailyPanel.GetComponent<DailyChallengeUI>();
+        if (dailyUI == null) dailyUI = dailyPanel.gameObject.AddComponent<DailyChallengeUI>();
+        GetOrCreateText(dailyPanel, "DailyTitle", "DAILY CHALLENGE", new Vector2(0f, 340f), new Vector2(390f, 55f), 28f);
+        TMP_Text date = GetOrCreateText(dailyPanel, "DailyDate", "UTC Daily", new Vector2(0f, 285f), new Vector2(390f, 36f), 17f);
+        TMP_Text attempts = GetOrCreateText(dailyPanel, "DailyAttempts", "Attempts: 3/3", new Vector2(0f, 235f), new Vector2(390f, 40f), 20f);
+        TMP_Text enemy = GetOrCreateText(dailyPanel, "DailyEnemy", "Daily enemy", new Vector2(0f, 80f), new Vector2(390f, 190f), 19f);
+        TMP_Text reward = GetOrCreateText(dailyPanel, "DailyReward", "Victory Reward", new Vector2(0f, -80f), new Vector2(390f, 100f), 18f);
+        Button dailyStart = GetOrCreateButton(dailyPanel, "DailyStartButton", "Start Daily Battle", new Vector2(0f, -255f), new Vector2(280f, 54f));
+        Button dailyReturn = GetOrCreateButton(dailyPanel, "ReturnFromDaily", "Back to Modes", new Vector2(0f, -340f), new Vector2(220f, 48f));
+        SerializedObject d = new SerializedObject(dailyUI);
+        Assign(d, "dateText", date); Assign(d, "attemptsText", attempts); Assign(d, "enemyText", enemy);
+        Assign(d, "rewardText", reward); Assign(d, "startButton", dailyStart); Assign(d, "returnButton", dailyReturn); d.ApplyModifiedPropertiesWithoutUndo();
+
+        PanelSwitcher switcher = FindComponentInScene<PanelSwitcher>(scene);
+        SerializedObject s = new SerializedObject(switcher);
+        Assign(s, "battleModePanel", hub.gameObject); Assign(s, "dailyChallengePanel", dailyPanel.gameObject); s.ApplyModifiedPropertiesWithoutUndo();
+        GameManager manager = FindComponentInScene<GameManager>(scene);
+        SerializedObject m = new SerializedObject(manager);
+        Assign(m, "battleModeUI", hubUI); Assign(m, "dailyChallengeUI", dailyUI); m.ApplyModifiedPropertiesWithoutUndo();
+        hub.gameObject.SetActive(false); dailyPanel.gameObject.SetActive(false);
+    }
+
+    private static void SetupEditBuildUI(Scene scene)
+    {
+        RectTransform meditationPanel = FindRectInScene(scene, "MeditationPanel");
+        RectTransform battlePanel = FindRectInScene(scene, "BattlePanel");
+        if (meditationPanel == null || battlePanel == null) return;
+
+        RectTransform panel = FindRectInScene(scene, "EditBuildPanel");
+        if (panel == null)
+        {
+            panel = CreateRect("EditBuildPanel", battlePanel.parent);
+            StretchToParent(panel);
+        }
+        EditBuildUI ui = panel.GetComponent<EditBuildUI>();
+        if (ui == null) ui = panel.gameObject.AddComponent<EditBuildUI>();
+
+        GetOrCreateText(panel, "EditBuildTitle", "EDIT BUILD",
+            new Vector2(0f, 385f), new Vector2(390f, 42f), 28f);
+        Button equipmentTab = GetOrCreateButton(panel, "EquipmentTabButton", "Equipment",
+            new Vector2(-130f, 335f), new Vector2(120f, 42f));
+        Button ultimateTab = GetOrCreateButton(panel, "UltimateTabButton", "Ultimate",
+            new Vector2(0f, 335f), new Vector2(120f, 42f));
+        Button summaryTab = GetOrCreateButton(panel, "SummaryTabButton", "My Build",
+            new Vector2(130f, 335f), new Vector2(120f, 42f));
+
+        RectTransform equipmentPage = GetOrCreatePage(panel, "EditEquipmentPage");
+        TMP_Text equipmentSummary = GetOrCreateText(equipmentPage, "EditEquipmentSummary",
+            "Head choices", new Vector2(0f, 290f), new Vector2(390f, 34f), 15f);
+        EquipmentSlot[] slots = (EquipmentSlot[])System.Enum.GetValues(typeof(EquipmentSlot));
+        Button[] slotButtons = new Button[slots.Length];
+        for (int i = 0; i < slots.Length; i++)
+        {
+            float x = -145f + (i % 4) * 97f;
+            float y = 225f - (i / 4) * 82f;
+            slotButtons[i] = GetOrCreateButton(equipmentPage,
+                $"{slots[i]}SlotButton", slots[i].ToString(),
+                new Vector2(x, y), new Vector2(88f, 70f));
+        }
+        Button[] choices = new Button[4];
+        for (int i = 0; i < choices.Length; i++)
+        {
+            float x = i % 2 == 0 ? -100f : 100f;
+            float y = 50f - (i / 2) * 120f;
+            choices[i] = GetOrCreateButton(equipmentPage, $"EquipmentChoice{i + 1}",
+                "Empty", new Vector2(x, y), new Vector2(185f, 100f));
+        }
+        TMP_Text equipmentDetail = GetOrCreateText(equipmentPage, "EquipmentInstanceDetail",
+            "Select an equipment instance", new Vector2(0f, -175f), new Vector2(390f, 105f), 13f);
+        Button equipSelected = GetOrCreateButton(equipmentPage, "EquipSelectedInstanceButton",
+            "Equip Selected", new Vector2(-100f, -250f), new Vector2(185f, 44f));
+        Button lockSelected = GetOrCreateButton(equipmentPage, "LockSelectedInstanceButton",
+            "Lock / Unlock", new Vector2(100f, -250f), new Vector2(185f, 44f));
+        Button upgradeSelected = GetOrCreateButton(equipmentPage, "UpgradeSelectedInstanceButton",
+            "Upgrade", new Vector2(-100f, -305f), new Vector2(185f, 44f));
+        Button dismantleSelected = GetOrCreateButton(equipmentPage, "DismantleSelectedInstanceButton",
+            "Dismantle", new Vector2(100f, -305f), new Vector2(185f, 44f));
+
+        RectTransform ultimatePage = GetOrCreatePage(panel, "EditUltimatePage");
+        Button[] ultimateButtons = new Button[5];
+        string[] ultimateLabels = { "Star Burst", "Iron Retaliation", "Rapid Nova", "Meteor Flurry", "Swift Ascension" };
+        for (int i = 0; i < ultimateButtons.Length; i++)
+        {
+            ultimateButtons[i] = GetOrCreateButton(ultimatePage, $"EditUltimate{i + 1}Button",
+                ultimateLabels[i], new Vector2(0f, 250f - i * 105f), new Vector2(390f, 90f));
+        }
+
+        RectTransform summaryPage = GetOrCreatePage(panel, "EditSummaryPage");
+        TMP_Text buildSummary = GetOrCreateText(summaryPage, "EditBuildSummaryText", "Build summary",
+            new Vector2(0f, 5f), new Vector2(390f, 590f), 16f);
+        buildSummary.alignment = TextAlignmentOptions.TopLeft;
+        Button returnButton = GetOrCreateButton(panel, "ReturnFromEditBuildButton", "Return",
+            new Vector2(0f, -395f), new Vector2(220f, 46f));
+
+        SerializedObject serialized = new SerializedObject(ui);
+        Assign(serialized, "equipmentPage", equipmentPage.gameObject);
+        Assign(serialized, "ultimatePage", ultimatePage.gameObject);
+        Assign(serialized, "summaryPage", summaryPage.gameObject);
+        Assign(serialized, "equipmentTabButton", equipmentTab);
+        Assign(serialized, "ultimateTabButton", ultimateTab);
+        Assign(serialized, "summaryTabButton", summaryTab);
+        Assign(serialized, "returnButton", returnButton);
+        Assign(serialized, "equipmentSummaryText", equipmentSummary);
+        Assign(serialized, "buildSummaryText", buildSummary);
+        AssignArray(serialized, "slotButtons", slotButtons);
+        AssignArray(serialized, "equipmentChoiceButtons", choices);
+        AssignArray(serialized, "ultimateButtons", ultimateButtons);
+        Assign(serialized, "equipmentDetailText", equipmentDetail);
+        Assign(serialized, "equipSelectedButton", equipSelected);
+        Assign(serialized, "lockSelectedButton", lockSelected);
+        Assign(serialized, "upgradeSelectedButton", upgradeSelected);
+        Assign(serialized, "dismantleSelectedButton", dismantleSelected);
+        serialized.ApplyModifiedPropertiesWithoutUndo();
+
+        Button nav = GetOrCreateButton(meditationPanel, "GoToEditBuildButton", "Edit Build",
+            new Vector2(0f, -370f), new Vector2(390f, 48f));
+        RectTransform legacyUltimate = FindChildByName(meditationPanel, "GoToUltimateButton");
+        RectTransform legacyEquipment = FindChildByName(meditationPanel, "GoToEquipmentButton");
+        if (legacyUltimate != null) legacyUltimate.gameObject.SetActive(false);
+        if (legacyEquipment != null) legacyEquipment.gameObject.SetActive(false);
+
+        PanelSwitcher switcher = FindComponentInScene<PanelSwitcher>(scene);
+        SerializedObject switcherSerialized = new SerializedObject(switcher);
+        Assign(switcherSerialized, "editBuildPanel", panel.gameObject);
+        Assign(switcherSerialized, "goToEditBuildButton", nav);
+        switcherSerialized.ApplyModifiedPropertiesWithoutUndo();
+        GameManager manager = FindComponentInScene<GameManager>(scene);
+        SerializedObject managerSerialized = new SerializedObject(manager);
+        Assign(managerSerialized, "editBuildUI", ui);
+        managerSerialized.ApplyModifiedPropertiesWithoutUndo();
+        panel.gameObject.SetActive(false);
+    }
+
+    private static RectTransform GetOrCreatePage(Transform parent, string name)
+    {
+        RectTransform page = FindChildByName(parent, name);
+        if (page == null) page = CreateRect(name, parent);
+        StretchToParent(page);
+        page.offsetMin = new Vector2(0f, 70f);
+        page.offsetMax = new Vector2(0f, -130f);
+        return page;
+    }
+
+    private static void SetupFeedbackUI(Scene scene)
+    {
+        Canvas canvas = FindComponentInScene<Canvas>(scene);
+        if (canvas == null) return;
+        RectTransform safeArea = FindChildByName(canvas.transform, "SafeArea");
+        Transform parent = safeArea != null ? safeArea : canvas.transform;
+        RectTransform root = FindChildByName(parent, "GameFeedbackLayer");
+        if (root == null) root = CreateRect("GameFeedbackLayer", parent);
+        StretchToParent(root);
+        GameFeedbackUI ui = root.GetComponent<GameFeedbackUI>();
+        if (ui == null) ui = root.gameObject.AddComponent<GameFeedbackUI>();
+
+        RectTransform toast = FindChildByName(root, "FeedbackToast");
+        if (toast == null)
+        {
+            toast = CreateRect("FeedbackToast", root);
+            Image image = toast.gameObject.AddComponent<Image>();
+            image.color = new Color(0.04f, 0.07f, 0.12f, 0.58f);
+        }
+        Image toastBackground = toast.GetComponent<Image>();
+        if (toastBackground != null)
+            toastBackground.color = new Color(0.04f, 0.07f, 0.12f, 0.58f);
+        SetRect(toast, 0f, 155f, 380f, 34f);
+        TMP_Text toastText = GetOrCreateText(toast, "FeedbackToastText", "Reward feedback",
+            Vector2.zero, new Vector2(368f, 30f), 14f);
+
+        RectTransform result = FindChildByName(root, "BattleResultPanel");
+        if (result == null)
+        {
+            result = CreateRect("BattleResultPanel", root);
+            Image image = result.gameObject.AddComponent<Image>();
+            image.color = new Color(0.025f, 0.035f, 0.065f, 0.985f);
+        }
+        SetRect(result, 0f, 0f, 400f, 520f);
+        TMP_Text title = GetOrCreateText(result, "BattleResultTitle", "VICTORY",
+            new Vector2(0f, 185f), new Vector2(360f, 56f), 30f);
+        TMP_Text body = GetOrCreateText(result, "BattleResultBody", "Rewards",
+            new Vector2(0f, 20f), new Vector2(350f, 250f), 18f);
+        Button continueButton = GetOrCreateButton(result, "BattleResultContinueButton", "Continue",
+            new Vector2(0f, -190f), new Vector2(220f, 52f));
+
+        SerializedObject serialized = new SerializedObject(ui);
+        Assign(serialized, "toastPanel", toast.gameObject);
+        Assign(serialized, "toastText", toastText);
+        Assign(serialized, "resultPanel", result.gameObject);
+        Assign(serialized, "resultTitleText", title);
+        Assign(serialized, "resultBodyText", body);
+        Assign(serialized, "resultContinueButton", continueButton);
+        serialized.ApplyModifiedPropertiesWithoutUndo();
+        GameManager manager = FindComponentInScene<GameManager>(scene);
+        SerializedObject managerSerialized = new SerializedObject(manager);
+        Assign(managerSerialized, "gameFeedbackUI", ui);
+        managerSerialized.ApplyModifiedPropertiesWithoutUndo();
+        toast.gameObject.SetActive(false);
+        result.gameObject.SetActive(false);
+        root.SetAsLastSibling();
+    }
+
+    private static void SetupCombatLog(
+        RectTransform hud,
+        SerializedObject battleSerialized)
+    {
+        Button toggle = GetOrCreateButton(hud, "CombatLogToggleButton", "Combat Log ▲",
+            new Vector2(-125f, -385f), new Vector2(160f, 38f));
+        RectTransform panel = FindChildByName(hud, "CombatLogPanel");
+        if (panel == null)
+        {
+            panel = CreateRect("CombatLogPanel", hud);
+            Image background = panel.gameObject.AddComponent<Image>();
+            background.color = new Color(0.025f, 0.035f, 0.065f, 0.96f);
+        }
+        SetRect(panel, 0f, -260f, 400f, 210f);
+        TMP_Text text = GetOrCreateText(panel, "CombatLogText", "Combat log",
+            Vector2.zero, new Vector2(370f, 180f), 14f);
+        text.alignment = TextAlignmentOptions.BottomLeft;
+        text.textWrappingMode = TextWrappingModes.Normal;
+
+        Assign(battleSerialized, "combatLogToggleButton", toggle);
+        Assign(battleSerialized, "combatLogPanel", panel.gameObject);
+        Assign(battleSerialized, "combatLogText", text);
+        panel.gameObject.SetActive(false);
+        toggle.gameObject.SetActive(false);
     }
 
     private static void LayoutUltimate(RectTransform panel)
@@ -755,9 +1111,95 @@ public static class BattlePrototypeUISetup
         RectTransform child = FindChildByName(parent, childName);
         if (child == null) return;
 
-        child.anchorMin = child.anchorMax = child.pivot = new Vector2(0.5f, 0.5f);
-        child.anchoredPosition = new Vector2(x, y);
-        child.sizeDelta = new Vector2(width, height);
+        SetRect(child, x, y, width, height);
+    }
+
+    private static void SetTextStyle(
+        RectTransform parent,
+        string childName,
+        float fontSize,
+        bool autoSize)
+    {
+        RectTransform rect = FindChildByName(parent, childName);
+        TMP_Text text = rect != null ? rect.GetComponent<TMP_Text>() : null;
+        if (text == null) return;
+        text.fontSize = fontSize;
+        text.enableAutoSizing = autoSize;
+        text.textWrappingMode = TextWrappingModes.Normal;
+        text.alignment = TextAlignmentOptions.Center;
+    }
+
+    private static void SetButtonLabel(
+        RectTransform parent,
+        string buttonName,
+        string value,
+        float fontSize)
+    {
+        RectTransform rect = FindChildByName(parent, buttonName);
+        TMP_Text label = rect != null
+            ? rect.GetComponentInChildren<TMP_Text>(true)
+            : null;
+        if (label != null)
+        {
+            label.text = value;
+            label.fontSize = fontSize;
+            label.enableAutoSizing = false;
+            return;
+        }
+        Text legacy = rect != null ? rect.GetComponentInChildren<Text>(true) : null;
+        if (legacy != null)
+        {
+            legacy.text = value;
+            legacy.fontSize = Mathf.RoundToInt(fontSize);
+            legacy.resizeTextForBestFit = false;
+        }
+    }
+
+    private static void NormalizeMeditationText(
+        RectTransform panel,
+        string childName,
+        float fontSize)
+    {
+        RectTransform rect = FindChildByName(panel, childName);
+        TMP_Text text = rect != null ? rect.GetComponent<TMP_Text>() : null;
+        if (text == null) return;
+
+        text.fontSize = fontSize;
+        text.enableAutoSizing = false;
+        text.fontStyle = FontStyles.Normal;
+        text.fontWeight = FontWeight.Regular;
+        text.alignment = TextAlignmentOptions.Center;
+        TMP_FontAsset defaultFont = TMP_Settings.defaultFontAsset;
+        if (defaultFont != null)
+        {
+            text.font = defaultFont;
+            text.fontSharedMaterial = defaultFont.material;
+        }
+        if (childName == "LevelText") text.text = "Level: 1";
+        if (childName == "ExpText") text.text = "EXP: 0 / 100";
+        EditorUtility.SetDirty(text);
+    }
+
+    private static void NormalizeMeditateButton(RectTransform panel)
+    {
+        RectTransform buttonRect = FindChildByName(panel, "MeditateButton");
+        if (buttonRect == null) return;
+
+        Image image = buttonRect.GetComponent<Image>();
+        if (image != null) image.preserveAspect = true;
+
+        Text legacyLabel = buttonRect.GetComponentInChildren<Text>(true);
+        if (legacyLabel != null)
+        {
+            legacyLabel.text = "Meditate";
+            legacyLabel.fontSize = 22;
+            legacyLabel.resizeTextForBestFit = false;
+            legacyLabel.alignment = TextAnchor.MiddleCenter;
+            legacyLabel.horizontalOverflow = HorizontalWrapMode.Overflow;
+            legacyLabel.verticalOverflow = VerticalWrapMode.Overflow;
+            legacyLabel.color = new Color(0.15f, 0.15f, 0.18f, 1f);
+            EditorUtility.SetDirty(legacyLabel);
+        }
     }
 
     private static void SetupWisdomText(StatsUI statsUI)
@@ -891,6 +1333,26 @@ public static class BattlePrototypeUISetup
         return slider;
     }
 
+    private static RectTransform GetOrCreateTimelineMarker(
+        Transform parent, string name, string label, Color color, float y)
+    {
+        RectTransform marker = FindChildByName(parent, name);
+        if (marker == null)
+        {
+            marker = CreateRect(name, parent);
+            Image image = marker.gameObject.AddComponent<Image>();
+            image.color = color;
+        }
+        marker.anchorMin = marker.anchorMax = new Vector2(0f, 0.5f);
+        marker.pivot = new Vector2(0.5f, 0.5f);
+        marker.anchoredPosition = new Vector2(0f, y);
+        marker.sizeDelta = new Vector2(32f, 32f);
+        TMP_Text text = GetOrCreateText(marker, "Label", label, Vector2.zero,
+            new Vector2(32f, 32f), 16f);
+        text.fontStyle = FontStyles.Bold;
+        return marker;
+    }
+
     private static RectTransform CreateRect(string name, Transform parent)
     {
         GameObject gameObject = new GameObject(
@@ -923,6 +1385,20 @@ public static class BattlePrototypeUISetup
         }
 
         serializedProperty.objectReferenceValue = value;
+    }
+
+    private static void AssignArray<T>(SerializedObject target, string property, T[] values)
+        where T : Object
+    {
+        SerializedProperty serializedProperty = target.FindProperty(property);
+        if (serializedProperty == null)
+        {
+            Debug.LogError($"Serialized property '{property}' was not found.");
+            return;
+        }
+        serializedProperty.arraySize = values.Length;
+        for (int i = 0; i < values.Length; i++)
+            serializedProperty.GetArrayElementAtIndex(i).objectReferenceValue = values[i];
     }
 
     private static RectTransform FindChildByName(Transform parent, string name)

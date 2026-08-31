@@ -4,6 +4,7 @@ using UnityEngine;
 
 public class UltimateSystem : MonoBehaviour
 {
+    public event Action<string> FeedbackRequested;
     private PlayerData playerData;
     private BattleState battleState;
 
@@ -39,6 +40,7 @@ public class UltimateSystem : MonoBehaviour
         playerData.equippedUltimateId = ultimateId;
         playerData.RefreshUltimate();
         Debug.Log($"Ultimate equipped: {playerData.equippedUltimate.ultimateName}");
+        FeedbackRequested?.Invoke($"Ultimate equipped: {playerData.equippedUltimate.ultimateName}");
         return true;
     }
 

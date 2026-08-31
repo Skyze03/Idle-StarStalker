@@ -3,10 +3,14 @@ using UnityEngine;
 
 public class MainStageSystem : MonoBehaviour
 {
+    public event Action<string> ToastRequested;
+    public event Action<string, string> ResultRequested;
     public const int TotalStages = 20;
     public const int MaxStamina = 20;
     public const int StaminaCostPerBattle = 1;
     public const int StaminaRecoverySeconds = 5 * 60;
+    public const float BattleEquipmentDropChance = 0.20f;
+    public const float SweepEquipmentDropChance = 0.10f;
 
     private PlayerData playerData;
     private InventorySystem inventorySystem;
@@ -16,6 +20,7 @@ public class MainStageSystem : MonoBehaviour
     private MainStageState stageState;
     private UltimateSystem ultimateSystem;
     private EquipmentSystem equipmentSystem;
+    private RewardPipeline rewardPipeline;
     private int activeStage;
 
     public MainStageState State => stageState;
@@ -54,7 +59,8 @@ public class MainStageSystem : MonoBehaviour
         EnemyData enemyData,
         MainStageState stageState,
         UltimateSystem ultimateSystem,
-        EquipmentSystem equipmentSystem)
+        EquipmentSystem equipmentSystem,
+        RewardPipeline rewardPipeline = null)
     {
         this.playerData = playerData;
         this.inventorySystem = inventorySystem;
@@ -64,6 +70,7 @@ public class MainStageSystem : MonoBehaviour
         this.stageState = stageState;
         this.ultimateSystem = ultimateSystem;
         this.equipmentSystem = equipmentSystem;
+        this.rewardPipeline = rewardPipeline;
 
         this.stageState.Normalize();
 
@@ -180,8 +187,11 @@ public class MainStageSystem : MonoBehaviour
 
         SpendStamina();
         RewardBundle reward = GetNormalReward(stageNumber);
+        string sweepDrop = RollEquipmentDrop(stageNumber, SweepEquipmentDropChance);
+        if (!string.IsNullOrEmpty(sweepDrop)) reward.AddEquipment(sweepDrop);
         GrantReward(reward, $"Stage {stageNumber} sweep");
         LastFeedback = $"Sweep complete: {FormatReward(reward)}";
+        ToastRequested?.Invoke($"Stage {stageNumber} Sweep\n{FormatReward(reward)}");
         return true;
     }
 
@@ -205,11 +215,17 @@ public class MainStageSystem : MonoBehaviour
             {
                 LastFeedback =
                     $"Stage {completedStage} defeated. No rewards received.";
+                ResultRequested?.Invoke(
+                    "DEFEAT",
+                    $"Stage {completedStage}\nNo rewards received.\n\nStrengthen or adjust your build, then try again."
+                );
             }
             return;
         }
 
         RewardBundle totalReward = GetNormalReward(completedStage);
+        string normalDrop = RollEquipmentDrop(completedStage, BattleEquipmentDropChance);
+        if (!string.IsNullOrEmpty(normalDrop)) totalReward.AddEquipment(normalDrop);
         bool firstClear = completedStage > stageState.highestClearedStage;
 
         if (firstClear)
@@ -221,11 +237,9 @@ public class MainStageSystem : MonoBehaviour
             );
             totalReward.Add(GetFirstClearReward(completedStage));
             string unlockedUltimate = GetUltimateUnlockForStage(completedStage);
-            if (!string.IsNullOrEmpty(unlockedUltimate))
-                ultimateSystem?.Unlock(unlockedUltimate);
+            if (!string.IsNullOrEmpty(unlockedUltimate)) totalReward.ultimateId = unlockedUltimate;
             string equipmentDrop = GetEquipmentUnlockForStage(completedStage);
-            if (!string.IsNullOrEmpty(equipmentDrop))
-                equipmentSystem?.Unlock(equipmentDrop);
+            if (!string.IsNullOrEmpty(equipmentDrop)) totalReward.AddEquipment(equipmentDrop);
 
             if (stageState.highestUnlockedStage > completedStage)
             {
@@ -256,6 +270,23 @@ public class MainStageSystem : MonoBehaviour
                 $"Main Story Prototype Complete! Stage {TotalStages} remains " +
                 $"available for replay and sweep. {FormatReward(totalReward)}";
         }
+
+        string resultBody = $"Stage {completedStage} cleared\n{FormatReward(totalReward)}";
+        if (firstClear)
+        {
+            string ultimateUnlock = GetUltimateUnlockForStage(completedStage);
+            string equipmentUnlock = GetEquipmentUnlockForStage(completedStage);
+            if (!string.IsNullOrEmpty(ultimateUnlock))
+                resultBody += $"\nUltimate unlocked: {UltimateData.GetById(ultimateUnlock).ultimateName}";
+            EquipmentData equipment = EquipmentData.GetById(equipmentUnlock);
+            if (equipment != null) resultBody += $"\nEquipment obtained: {equipment.itemName}";
+            resultBody += completedStage < TotalStages
+                ? $"\nStage {completedStage + 1} unlocked"
+                : "\nMain Story prototype complete!";
+        }
+        if (!string.IsNullOrEmpty(normalDrop))
+            resultBody += $"\nRandom drop: {EquipmentData.GetById(normalDrop).itemName}";
+        ResultRequested?.Invoke(firstClear ? "FIRST CLEAR" : "VICTORY", resultBody);
     }
 
     private bool CanSpendStamina()
@@ -435,6 +466,17 @@ public class MainStageSystem : MonoBehaviour
         return EquipmentSystem.GetStageEquipmentId(stageNumber);
     }
 
+    public string RollEquipmentDrop(int stageNumber, float chance, float? forcedRoll = null)
+    {
+        float roll = forcedRoll ?? UnityEngine.Random.value;
+        if (roll >= chance) return string.Empty;
+        int poolSize = Math.Min(10, Math.Max(1, stageNumber));
+        int index = forcedRoll.HasValue
+            ? Math.Min(poolSize - 1, Mathf.FloorToInt((forcedRoll.Value / Math.Max(0.0001f, chance)) * poolSize))
+            : UnityEngine.Random.Range(0, poolSize);
+        return EquipmentSystem.GetStageEquipmentId(index + 1);
+    }
+
     private string GetEquipmentUnlockFeedback(int stageNumber)
     {
         EquipmentData item = EquipmentData.GetById(
@@ -484,6 +526,7 @@ public class MainStageSystem : MonoBehaviour
 
     private void GrantReward(RewardBundle reward, string source)
     {
+        if (rewardPipeline != null) { rewardPipeline.Grant(reward, source); return; }
         if (reward == null || playerData == null) return;
 
         playerData.energy += reward.energy;
@@ -517,6 +560,11 @@ public class MainStageSystem : MonoBehaviour
             result += $", +{reward.memoryFragments} Memory Fragments";
         if (reward.runes > 0)
             result += $", +{reward.runes} Runes";
+        foreach (string equipmentId in reward.equipmentTemplateIds ?? Array.Empty<string>())
+        {
+            EquipmentData equipment = EquipmentData.GetById(equipmentId);
+            if (equipment != null) result += $", {equipment.itemName}";
+        }
         return result + ".";
     }
 }

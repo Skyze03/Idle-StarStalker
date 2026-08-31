@@ -28,6 +28,7 @@ public class BattleSystem : MonoBehaviour
     public EquipmentSystem EquipmentSystem => equipmentSystem;
     public string CombatLogText => string.Join("\n", combatLog);
     public event Action<BattleResult> BattleEnded;
+    public event Action BattleStarted;
 
     public CombatBuildSnapshot CreatePlayerBuildPreview()
     {
@@ -88,6 +89,7 @@ public class BattleSystem : MonoBehaviour
 
         Record($"Build locked: {playerBuild.ultimate.ultimateName} vs " +
             $"{enemyBuild.ultimate.ultimateName}");
+        BattleStarted?.Invoke();
         return true;
     }
 

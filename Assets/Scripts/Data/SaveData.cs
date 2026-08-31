@@ -41,4 +41,11 @@ public class SaveData
     public string equippedWeaponItemId;
     public string equippedAccessoryItemId;
     public bool equipmentInitialized;
+    public string dailyChallengeUtcDateKey;
+    public int dailyChallengeRemainingAttempts;
+    public bool dailyChallengeInitialized;
+    public InventoryItemStack[] itemStacks;
+    public EquipmentInstance[] equipmentInstances;
+    public EquipmentLoadoutEntry[] equippedInstances;
+    public int starDustCount;
 }

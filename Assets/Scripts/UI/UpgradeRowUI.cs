@@ -38,19 +38,47 @@ public class UpgradeRowUI : MonoBehaviour
 
         if (levelText != null)
         {
-            levelText.text = partType + " Lv: " + playerData.GetPartLevel(partType);
+            int level = playerData.GetPartLevel(partType);
+            levelText.text = $"{partType} Lv.{level}\n{GetProgressionText(level)}";
         }
 
         if (costText != null)
         {
-            costText.text = playerData.CanUpgradePart(partType)
-                ? "Cost: " + playerData.GetPartUpgradeCost(partType) + " Energy"
-                : "Requires Player Level " + (playerData.GetPartLevel(partType) + 1);
+            costText.gameObject.SetActive(false);
         }
 
         if (upgradeButton != null)
         {
             upgradeButton.interactable = playerData.CanUpgradePart(partType);
+            TMP_Text buttonLabel = upgradeButton.GetComponentInChildren<TMP_Text>(true);
+            if (buttonLabel != null)
+            {
+                buttonLabel.text = playerData.CanUpgradePart(partType)
+                    ? $"{playerData.GetPartUpgradeCost(partType)} ENERGY"
+                    : $"PLAYER LV.{playerData.GetPartLevel(partType) + 1} REQUIRED";
+            }
+        }
+    }
+
+    private string GetProgressionText(int level)
+    {
+        switch (partType)
+        {
+            case BodyPartType.Weapon:
+                return $"Attack {10 + (level - 1) * 5}  →  {10 + level * 5}";
+            case BodyPartType.Head:
+                return $"WIS {5 + (level - 1) * 2} → {5 + level * 2}\n" +
+                    $"Meditate +{level - 1} → +{level}";
+            case BodyPartType.Arms:
+                return $"Collection +{level - 1}  →  +{level}";
+            case BodyPartType.Chest:
+                return $"Defense {5 + (level - 1) * 3}  →  {5 + level * 3}";
+            case BodyPartType.Legs:
+                return $"HP {100 + (level - 1) * 20}  →  {100 + level * 20}";
+            case BodyPartType.Feet:
+                return $"Agility {5 + (level - 1) * 2}  →  {5 + level * 2}";
+            default:
+                return string.Empty;
         }
     }
 

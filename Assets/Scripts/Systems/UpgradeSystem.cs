@@ -1,7 +1,9 @@
+using System;
 using UnityEngine;
 
 public class UpgradeSystem : MonoBehaviour
 {
+    public event Action<string> FeedbackRequested;
     private PlayerData playerData;
 
     public void Setup(PlayerData data)
@@ -22,6 +24,9 @@ public class UpgradeSystem : MonoBehaviour
             Debug.Log(
                 partType + " cannot exceed Player Level " + playerData.level
             );
+            FeedbackRequested?.Invoke(
+                $"{partType}: Player Lv.{playerData.GetPartLevel(partType) + 1} required"
+            );
             return false;
         }
 
@@ -30,6 +35,7 @@ public class UpgradeSystem : MonoBehaviour
         if (playerData.energy < cost)
         {
             Debug.Log("Not enough energy to upgrade " + partType);
+            FeedbackRequested?.Invoke($"{partType}: not enough Energy ({cost} required)");
             return false;
         }
 
@@ -37,6 +43,9 @@ public class UpgradeSystem : MonoBehaviour
         playerData.UpgradePart(partType);
 
         Debug.Log(partType + " upgraded. New Level = " + playerData.GetPartLevel(partType));
+        FeedbackRequested?.Invoke(
+            $"{partType} upgraded to Lv.{playerData.GetPartLevel(partType)}  -{cost} Energy"
+        );
         return true;
     }
 }

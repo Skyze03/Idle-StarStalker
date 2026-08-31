@@ -10,7 +10,7 @@ public class SaveSystem : MonoBehaviour
         saveFilePath = Path.Combine(Application.persistentDataPath, "save.json");
     }
 
-    public void SaveGame(PlayerData playerData, MeditationState meditationState, InventoryData inventoryData, BuffData buffData, MainStageState mainStageState)
+    public void SaveGame(PlayerData playerData, MeditationState meditationState, InventoryData inventoryData, BuffData buffData, MainStageState mainStageState, DailyChallengeState dailyState)
     {
         if (playerData == null || meditationState == null || inventoryData == null || buffData == null || mainStageState == null)
         {
@@ -58,6 +58,16 @@ public class SaveSystem : MonoBehaviour
         saveData.equippedWeaponItemId = playerData.equippedWeaponItemId;
         saveData.equippedAccessoryItemId = playerData.equippedAccessoryItemId;
         saveData.equipmentInitialized = true;
+        saveData.itemStacks = inventoryData.itemStacks;
+        saveData.equipmentInstances = inventoryData.equipmentInstances;
+        saveData.equippedInstances = inventoryData.equippedInstances;
+        saveData.starDustCount = inventoryData.starDustCount;
+        if (dailyState != null)
+        {
+            saveData.dailyChallengeUtcDateKey = dailyState.utcDateKey;
+            saveData.dailyChallengeRemainingAttempts = dailyState.remainingAttempts;
+            saveData.dailyChallengeInitialized = true;
+        }
 
         string json = JsonUtility.ToJson(saveData, true);
         File.WriteAllText(saveFilePath, json);
@@ -65,7 +75,7 @@ public class SaveSystem : MonoBehaviour
         Debug.Log("Game saved to: " + saveFilePath);
     }
 
-    public bool LoadGame(PlayerData playerData, MeditationState meditationState, InventoryData inventoryData, BuffData buffData, MainStageState mainStageState)
+    public bool LoadGame(PlayerData playerData, MeditationState meditationState, InventoryData inventoryData, BuffData buffData, MainStageState mainStageState, DailyChallengeState dailyState)
     {
         if (!File.Exists(saveFilePath))
         {
@@ -130,6 +140,10 @@ public class SaveSystem : MonoBehaviour
 
         inventoryData.memoryFragmentCount = saveData.memoryFragmentCount;
         inventoryData.runeCount = saveData.runeCount;
+        inventoryData.itemStacks = saveData.itemStacks ?? System.Array.Empty<InventoryItemStack>();
+        inventoryData.equipmentInstances = saveData.equipmentInstances ?? System.Array.Empty<EquipmentInstance>();
+        inventoryData.equippedInstances = saveData.equippedInstances ?? System.Array.Empty<EquipmentLoadoutEntry>();
+        inventoryData.starDustCount = saveData.starDustCount;
 
         buffData.meditationExpBonus = saveData.meditationExpBonus;
         buffData.collectionEnergyBonus = saveData.collectionEnergyBonus;
@@ -146,6 +160,11 @@ public class SaveSystem : MonoBehaviour
         else
         {
             mainStageState.ResetProgress();
+        }
+        if (dailyState != null && saveData.dailyChallengeInitialized)
+        {
+            dailyState.utcDateKey = saveData.dailyChallengeUtcDateKey;
+            dailyState.remainingAttempts = saveData.dailyChallengeRemainingAttempts;
         }
 
         Debug.Log("Game loaded from: " + saveFilePath);
